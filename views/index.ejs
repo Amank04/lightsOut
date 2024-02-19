@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"> -->
-    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="/styles/style.css"> <!-- Update the path to your CSS file -->
     <title>Lights_Out</title>
 </head>
 
@@ -14,41 +13,14 @@
         <h1 class="text-4xl font-bold mb-4 text-center">Lights Out</h1>
 
         <!-- Game Board -->
-<div class="grid grid-cols-5 gap-4 mb-6">
-    <!-- Example of a dynamic button (you would generate these buttons using JavaScript) -->
-    <!-- Repeat the button code for each cell in the 5x5 grid -->
-    <!-- You can also use a loop in JavaScript to generate these buttons dynamically -->
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-    <button class="h-16 w-16 rounded-md bg-gray-300"></button>
-</div>
-
+        <div id="game-board" class="grid grid-cols-5 gap-4 mb-6">
+            <!-- Dynamically generate buttons using EJS -->
+            <% for (let row = 0; row < 5; row++) { %>
+                <% for (let col = 0; col < 5; col++) { %>
+                    <button id="cell_<%= row %>_<%= col %>" class="h-16 w-16 rounded-md <% if (board[row][col]) { %>bg-yellow-500<% } else { %>bg-gray-300<% } %>"></button>
+                <% } %>
+            <% } %>
+        </div>
 
         <!-- Additional Components -->
         <div class="mb-4">
@@ -61,7 +33,7 @@
             <!-- Level Selector -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Select Level:</label>
-                <select class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
+                <select id="level-selector" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
                     <option value="1">Level 1</option>
                     <option value="2">Level 2</option>
                     <!-- Add more levels as needed -->
@@ -71,11 +43,11 @@
             <!-- Current Level Display -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Current Level:</label>
-                <span class="text-lg font-semibold">1</span>
+                <span id="current-level" class="text-lg font-semibold">1</span>
             </div>
 
             <!-- Reset Game Button -->
-            <button class="w-full bg-green-500 text-white px-4 py-2 rounded-md mb-4">Reset Game</button>
+            <button id="reset-game" class="w-full bg-green-500 text-white px-4 py-2 rounded-md mb-4">Reset Game</button>
 
             <!-- Login and Signup Links -->
             <div class="flex justify-center space-x-4">
@@ -83,6 +55,10 @@
                 <a href="#" class="text-blue-500">Signup</a>
             </div>
         </div>
+
+        <script>
+            // Include your JavaScript logic here to interact with the backend and update the UI
+        </script>
     </div>
 </body>
 
