@@ -15,11 +15,13 @@
         <!-- Game Board -->
         <div id="game-board" class="grid grid-cols-5 gap-4 mb-6">
             <!-- Dynamically generate buttons using EJS -->
-            <% for (let row = 0; row < 5; row++) { %>
-                <% for (let col = 0; col < 5; col++) { %>
-                    <button id="cell_<%= row %>_<%= col %>" class="h-16 w-16 rounded-md <% if (board[row][col]) { %>bg-yellow-500<% } else { %>bg-gray-300<% } %>"></button>
-                <% } %>
-            <% } %>
+            <% for (let row=0; row < 5; row++) { %>
+                <% for (let col=0; col < 5; col++) { %>
+                    <button id="cell_<%= row %>_<%= col %>"
+                        class="h-16 w-16 rounded-md <% if (board[row][col]) { %>bg-yellow-500<% } else { %>bg-gray-300<% } %>"
+                        data-row="<%= row %>" data-col="<%= col %>"></button>
+                    <% } %>
+                        <% } %>
         </div>
 
         <!-- Additional Components -->
@@ -33,7 +35,8 @@
             <!-- Level Selector -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Select Level:</label>
-                <select id="level-selector" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
+                <select id="level-selector"
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
                     <option value="1">Level 1</option>
                     <option value="2">Level 2</option>
                     <!-- Add more levels as needed -->
@@ -58,6 +61,52 @@
 
         <script>
             // Include your JavaScript logic here to interact with the backend and update the UI
+
+            // Add this script block to set event listeners
+            document.addEventListener('DOMContentLoaded', function () {
+                const buttons = document.querySelectorAll('[id^="cell_"]');
+                buttons.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const row = this.dataset.row;
+                        const col = this.dataset.col;
+                        toggleLights(row, col);
+                    });
+                });
+            });
+
+
+            async function toggleLights(row, col) {
+                try {
+                    const response = await fetch("/api/toggleLights", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ row, col }),
+                    });
+
+                    const data = await response.json();
+                    updateBoard(data.board);
+
+                    if (data.gameEnded) {
+                        alert("Congratulations! You won!");
+                        // Handle game end logic as needed
+                    }
+                } catch (error) {
+                    console.error("Error toggling lights:", error);
+                }
+            }
+
+            function updateBoard(newBoard) {
+                // Implement logic to update the visual representation of the game board
+                // For example, you can update the button classes based on the new board state
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        const button = document.getElementById(`cell_${row}_${col}`);
+                        button.className = `h-16 w-16 rounded-md ${newBoard[row][col] ? 'bg-yellow-500' : 'bg-gray-300'}`;
+                    }
+                }
+            }
         </script>
     </div>
 </body>
