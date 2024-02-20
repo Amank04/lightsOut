@@ -27,7 +27,7 @@ const createGrid = () => {
     );
 
     // Apply a series of random moves to make the grid solvable
-    const moves = 10; // Adjust the number of moves as needed
+    const moves = 3; // Adjust the number of moves as needed
 
     for (let i = 0; i < moves; i++) {
         const randomRow = Math.floor(Math.random() * 5);
@@ -39,6 +39,7 @@ const createGrid = () => {
 };
 
 const toggleLights = (grid, row, col) => {
+    console.log(grid, row, col);
     grid[row][col] = !grid[row][col];
     if (row < 4) grid[row + 1][col] = !grid[row + 1][col];
     if (row > 0) grid[row - 1][col] = !grid[row - 1][col];
@@ -52,11 +53,28 @@ const toggleLights = (grid, row, col) => {
 // app.use(passport.session());
 
 
+let board = createGrid();
+
 // Home route
 app.get("/", (req, res) => {
-    let board = createGrid();
     console.log({board});
     res.render("index.ejs", {board: board});
+});
+
+// API endpoint to toggle lights based on user input
+app.post("/api/toggleLights", (req, res) => {
+    let { row, col } = req.body;
+    row = parseInt(row), col= parseInt(col); // parsing string to number.
+    console.log(typeof(row));
+    // Toggle lights on the server 
+    toggleLights(board,row, col);
+    console.log(board);
+
+    // Check if the game has ended
+    const gameEnded = board.every(row => row.every(c => c));
+    // console.log(gameEnded);
+
+    res.json({ board, gameEnded });
 });
 
 // Start the server
