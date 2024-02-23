@@ -11,7 +11,7 @@
     "watch:tailwind": "tailwindcss build -o public/styles/style.css --watch",
     "start": "npm run watch:tailwind && nodemon index.js"
   },
-  "author": "Aman Aditya vikrant Tushitaa",
+  "author": "Aman Aditya Vikrant Tushitaa",
   "license": "ISC",
   "dependencies": {
     "autoprefixer": "^10.4.17",
