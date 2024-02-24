@@ -1,0 +1,1 @@
+<p> Lights Out is a puzzle game that has its roots in mathematical algebra, specifically in the field of linear algebra. It consists of a grid of lights that can be either on or off. The goal of the game is to turn off all the lights. </P>
