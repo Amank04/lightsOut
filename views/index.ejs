@@ -5,60 +5,180 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/styles/style.css"> <!-- Update the path to your CSS file -->
+    <style>
+        body {
+            /* background: linear-gradient(to right, #4A5568, #2D3748); */
+            background-image: url('https://source.unsplash.com/1600x900/?game'); /
+            /* Update the gradient colors as needed */
+        }
+
+        #game-board {
+            margin: 0 auto;
+        }
+
+        #congratulations {
+            background-color: #68D391;
+            /* Update the background color as needed */
+        }
+    </style>
     <title>Lights_Out</title>
 </head>
 
-<body class="bg-gray-200 h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 class="text-4xl font-bold mb-4 text-center">Lights Out</h1>
+<body class="h-fit ">
+    <header class="sticky bg-blue-500 text-white text-center py-4">
+        <h1 class="text-2xl font-bold">Lights Out Game</h1>
+        <p class="text-sm">Turn off all the lights to win!</p>
+    </header>
+    <div class="h-fit min-h-dvh flex items-center justify-center">
 
-        <!-- Game Board -->
-        <div id="game-board" class="grid grid-cols-5 gap-4 mb-6">
-            <!-- Dynamically generate buttons using EJS -->
-            <% for (let row = 0; row < 5; row++) { %>
-                <% for (let col = 0; col < 5; col++) { %>
-                    <button id="cell_<%= row %>_<%= col %>" class="h-16 w-16 rounded-md <% if (board[row][col]) { %>bg-yellow-500<% } else { %>bg-gray-300<% } %>"></button>
-                <% } %>
-            <% } %>
+
+
+        <div class="bg-white p-5 rounded-lg shadow-md w-full h-[96%] max-w-fit mx-auto overflow-hidden">
+
+            <h1 class="text-4xl font-bold mb-4 text-center text-gray-800">Lights Out</h1>
+
+            <!-- Game Board -->
+            <div id="game-board" class="grid grid-cols-<%=board.length %>  gap-2 mb-6 w-full min-w-max">
+                <!-- Dynamically generate buttons using EJS -->
+                <% for (let row=0; row < board.length; row++) { %>
+                    <% for (let col=0; col < board[row].length; col++) { %>
+                        <button id="cell_<%= row %>_<%= col %>"
+                            class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-yellow-500<% } else { %>bg-gray-300<% } %>"
+                            data-row="<%= row %>" data-col="<%= col %>"></button>
+                        <% } %>
+                            <% } %>
+            </div>
+
+
+            <!-- Congratulations on winning the game. -->
+            <div id="congratulations" class="w-full text-center p-6 hidden text-white rounded-lg">
+                <img src="gifs/yay.gif" alt="Congratulations!, you won the game." class="h-16 mx-auto mb-4">
+                <h2 class="text-4xl font-bold mb-4">Congratulations!</h2>
+                <p class="text-lg">You won the game! 🎉</p>
+            </div>
+
+
+
+            <!-- Additional Components -->
+            <div class="grid">
+                <!-- Player Information -->
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-lg">Welcome, PlayerName!</span>
+                    <button class="text-blue-500">Logout</button>
+                </div>
+
+                <!-- Level Selector -->
+                <form id="levelForm" class="mb-4" action="/levels" method="POST">
+                    <label class="block text-sm font-medium text-gray-700">Select Level:</label>
+                    <select id="level-selector" name="level" onchange="submitForm()"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
+                        <option value="<%=level %>">Level <%=level %>
+                        </option>
+                        <option value="1">Level 1</option>
+                        <option value="2">Level 2</option>
+                        <option value="3">Level 3</option>
+                        <option value="4">Level 4</option>
+                        <option value="5">Level 5</option>
+                        <option value="6">Level 6 👑</option>
+                        <option value="7">Level 7</option>
+                        <option value="8">Level 8</option>
+                        <option value="9">Level 9</option>
+                        <option value="10">Level 10</option>
+                        <!-- Add more levels as needed -->
+                    </select>
+
+                </form>
+
+                <!-- Current Level Display -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Current Level:</label>
+                    <span id="current-level" class="text-lg font-semibold">
+                        <%=level %>
+                    </span>
+                </div>
+
+                <!-- Nevel Level Anchor -->
+                <div class="flex">
+
+                    <a id="previous-game" href="/levels?CurrLevel=<%= level %>&id=0"
+                        class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white mr-1 px-4 py-2 rounded-md">Previous
+                        Level</a>
+                    <a id="next-game" href="/levels?CurrLevel=<%= level %>&id=1"
+                        class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white text-fit ml-1 px-4 py-2 rounded-md">Next
+                        Level</a>
+                </div>
+
+            </div>
+
         </div>
 
-        <!-- Additional Components -->
-        <div class="mb-4">
-            <!-- Player Information -->
-            <div class="flex items-center justify-between mb-4">
-                <span class="text-lg">Welcome, PlayerName!</span>
-                <button class="text-blue-500">Logout</button>
-            </div>
+    </div>
+    <footer class="sticky bg-blue-500 text-white text-center py-4 relative">
+        <p>Developed with 💗 by <b>Warriors</b></p>
+        <p class="text-sm">&copy; <%-new Date().getFullYear() %> || All rights reserved.</p>
+    </footer>
+    <script>
+        // Include your JavaScript logic here to interact with the backend and update the UI
 
-            <!-- Level Selector -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700">Select Level:</label>
-                <select id="level-selector" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
-                    <option value="1">Level 1</option>
-                    <option value="2">Level 2</option>
-                    <!-- Add more levels as needed -->
-                </select>
-            </div>
+        // Add this script block to set event listeners
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('[id^="cell_"]');
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const row = this.dataset.row;
+                    const col = this.dataset.col;
+                    console.log(row, col);
+                    toggleLights(row, col);
+                });
+            });
+        });
 
-            <!-- Current Level Display -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700">Current Level:</label>
-                <span id="current-level" class="text-lg font-semibold">1</span>
-            </div>
 
-            <!-- Reset Game Button -->
-            <button id="reset-game" class="w-full bg-green-500 text-white px-4 py-2 rounded-md mb-4">Reset Game</button>
+        async function toggleLights(row, col) {
+            try {
+                const response = await fetch("/api/toggleLights", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ row, col }),
+                });
 
-            <!-- Login and Signup Links -->
-            <div class="flex justify-center space-x-4">
-                <a href="#" class="text-blue-500">Login</a>
-                <a href="#" class="text-blue-500">Signup</a>
-            </div>
-        </div>
+                const data = await response.json();
+                console.log("length: " + data.board.length);
+                await updateBoard(data.board, data.board.length);  // Update the board first
 
-        <script>
-            // Include your JavaScript logic here to interact with the backend and update the UI
-        </script>
+                if (data.gameEnded) {
+                    document.getElementById('game-board').classList.add('hidden'); //Hiding div of 'board of game'.
+                    document.getElementById('congratulations').classList.remove('hidden'); //Showing div of  'congratulations'.
+                    document.getElementById('next-game').classList.add('bg-blue-500', 'hover:bg-blue-800')
+                    document.getElementById('next-game').classList.remove('bg-green-500', 'hover:bg-green-800')
+                    document.getElementById('previous-game').classList.add('bg-teal-300', 'hover:bg-teal-500')
+                    document.getElementById('next-game').classList.remove('bg-green-500', 'hover:bg-green-800')
+                }
+            } catch (error) {
+                console.error("Error toggling lights:", error);
+            }
+        }
+
+
+        function updateBoard(newBoard, matrixSize) {
+            // Implement logic to update the visual representation of the game board
+            // For example, you can update the button classes based on the new board state
+            for (let row = 0; row < matrixSize; row++) {
+                console.log(matrixSize)
+                for (let col = 0; col < matrixSize; col++) {
+                    const button = document.getElementById(`cell_${row}_${col}`);
+                    button.className = `h-16 w-16 rounded-md ${newBoard[row][col] ? 'bg-yellow-500' : 'bg-gray-300'}`;
+                }
+            }
+        }
+
+        // Submiting the level & making the POST request to the backend side.
+        function submitForm() {
+            document.getElementById("levelForm").submit();
+        }
+    </script>
     </div>
 </body>
 

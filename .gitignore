@@ -1,0 +1,21 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore log files
+*.log
+
+# Ignore .env files
+.env
+# Node.js
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
+
+# Java
+target/
+
+# Visual Studio Code
+.vscode/
