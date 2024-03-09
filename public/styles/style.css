@@ -560,6 +560,43 @@ video {
   position: relative;
 }
 
+<<<<<<< Updated upstream
+=======
+.sticky {
+  position: sticky;
+}
+
+.left-1 {
+  left: 0.25rem;
+}
+
+.top-1 {
+  top: 0.25rem;
+}
+
+.top-5 {
+  top: 1.25rem;
+}
+
+.top-52 {
+  top: 13rem;
+}
+
+.mx-1 {
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.-mt-10 {
+  margin-top: -2.5rem;
+}
+
+>>>>>>> Stashed changes
 .mb-4 {
   margin-bottom: 1rem;
 }
@@ -568,14 +605,42 @@ video {
   margin-bottom: 1.5rem;
 }
 
+<<<<<<< Updated upstream
 .mt-1 {
   margin-top: 0.25rem;
+=======
+.ml-1 {
+  margin-left: 0.25rem;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
+.mt-0 {
+  margin-top: 0px;
+>>>>>>> Stashed changes
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
+<<<<<<< Updated upstream
+=======
+.mt-2 {
+  margin-top: 0.5rem;
 }
 
 .mt-4 {
   margin-top: 1rem;
 }
 
+.mt-8 {
+  margin-top: 2rem;
+}
+
+>>>>>>> Stashed changes
 .block {
   display: block;
 }
@@ -612,10 +677,43 @@ video {
   height: 4rem;
 }
 
+.h-\[96\%\] {
+  height: 96%;
+}
+
+.h-fit {
+  height: -moz-fit-content;
+  height: fit-content;
+}
+
+.h-full {
+  height: 100%;
+}
+
 .h-screen {
   height: 100vh;
 }
 
+<<<<<<< Updated upstream
+=======
+.h-svh {
+  height: 100svh;
+}
+
+.max-h-fit {
+  max-height: -moz-fit-content;
+  max-height: fit-content;
+}
+
+.min-h-dvh {
+  min-height: 100dvh;
+}
+
+.min-h-full {
+  min-height: 100%;
+}
+
+>>>>>>> Stashed changes
 .min-h-screen {
   min-height: 100vh;
 }
@@ -628,10 +726,47 @@ video {
   width: 4rem;
 }
 
+<<<<<<< Updated upstream
+=======
+.w-48 {
+  width: 12rem;
+}
+
+.w-fit {
+  width: -moz-fit-content;
+  width: fit-content;
+}
+
+>>>>>>> Stashed changes
 .w-full {
   width: 100%;
 }
 
+<<<<<<< Updated upstream
+=======
+.w-screen {
+  width: 100vw;
+}
+
+.w-svw {
+  width: 100svw;
+}
+
+.min-w-max {
+  min-width: -moz-max-content;
+  min-width: max-content;
+}
+
+.max-w-fit {
+  max-width: -moz-fit-content;
+  max-width: fit-content;
+}
+
+.max-w-full {
+  max-width: 100%;
+}
+
+>>>>>>> Stashed changes
 .max-w-md {
   max-width: 28rem;
 }
@@ -646,6 +781,10 @@ video {
 
 .resize {
   resize: both;
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .grid-cols-4 {
@@ -739,8 +878,28 @@ video {
   background-color: rgb(234 179 8 / var(--tw-bg-opacity));
 }
 
+<<<<<<< Updated upstream
+=======
+.bg-yellow-800 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(133 77 14 / var(--tw-bg-opacity));
+}
+
+.p-0 {
+  padding: 0px;
+}
+
+>>>>>>> Stashed changes
 .p-2 {
   padding: 0.5rem;
+}
+
+.p-3 {
+  padding: 0.75rem;
+}
+
+.p-5 {
+  padding: 1.25rem;
 }
 
 .p-6 {
@@ -759,6 +918,11 @@ video {
 .py-2 {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .text-center {
@@ -807,6 +971,11 @@ video {
   color: rgb(55 65 81 / var(--tw-text-opacity));
 }
 
+.text-gray-800 {
+  --tw-text-opacity: 1;
+  color: rgb(31 41 55 / var(--tw-text-opacity));
+}
+
 .text-teal-500 {
   --tw-text-opacity: 1;
   color: rgb(20 184 166 / var(--tw-text-opacity));
@@ -831,6 +1000,34 @@ video {
   outline-style: solid;
 }
 
+<<<<<<< Updated upstream
+=======
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.duration-300 {
+  transition-duration: 300ms;
+}
+
+.hover\:bg-blue-800:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(30 64 175 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-green-800:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(22 101 52 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-teal-500:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(20 184 166 / var(--tw-bg-opacity));
+}
+
+>>>>>>> Stashed changes
 .focus\:border-blue-300:focus {
   --tw-border-opacity: 1;
   border-color: rgb(147 197 253 / var(--tw-border-opacity));

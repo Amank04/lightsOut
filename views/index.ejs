@@ -5,12 +5,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/styles/style.css"> <!-- Update the path to your CSS file -->
+<<<<<<< Updated upstream
     <title>Lights_Out</title>
 </head>
 
 <body class="bg-gray-200 h-screen flex items-center justify-center">
     <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 class="text-4xl font-bold mb-4 text-center">Lights Out</h1>
+=======
+    <style>
+        body {
+            /* background: linear-gradient(to right, #4A5568, #2D3748); */
+            background-image: url('https://source.unsplash.com/1600x900/?game');/
+            /* Update the gradient colors as needed */
+        }
+
+        #game-board {
+            margin: 0 auto;
+        }
+
+        #congratulations {
+            background-color: #68D391;
+            /* Update the background color as needed */
+        }
+    </style>
+    <title>Lights_Out</title>
+</head>
+
+<body class="">
+    <header class="sticky bg-blue-500 text-white text-center py-2">
+        <h1 class="text-2xl font-bold">Lights Out Game</h1>
+        <p class="text-sm">Turn off all the lights to win!</p>
+    </header>
+    <div class="h-fit min-h-dvh flex items-center justify-center">
+
+
+
+        <div class="bg-white p-5 rounded-lg shadow-md w-full h-[96%] max-w-fit mx-auto overflow-hidden">
+
+            <!-- <h1 class="text-4xl font-bold mb-4 text-center text-gray-800">Lights Out</h1> -->
+
+            <!-- Game Board -->
+            <div id="game-board" class="grid grid-cols-<%=board.length %>  gap-2 mb-6 w-full min-w-max">
+                <!-- Dynamically generate buttons using EJS -->
+                <% for (let row=0; row < board.length; row++) { %>
+                    <% for (let col=0; col < board[row].length; col++) { %>
+                        <button id="cell_<%= row %>_<%= col %>"
+                            class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-yellow-500<% } else { %>bg-gray-300<% } %>"
+                            data-row="<%= row %>" data-col="<%= col %>"></button>
+                        <% } %>
+                            <% } %>
+            </div>
+
+
+            <!-- Congratulations on winning the game. -->
+            <div id="congratulations" class="w-full text-center p-6 hidden text-white rounded-lg">
+                <img src="gifs/yay.gif" alt="Congratulations!, you won the game." class="h-16 mx-auto mb-4">
+                <h2 class="text-4xl font-bold mb-4">Congratulations!</h2>
+                <p class="text-lg">You won the game! 🎉</p>
+            </div>
+
+
+
+            <!-- Additional Components -->
+            <div class="grid">
+                <!-- Player Information -->
+                <div class="flex items-center justify-between mb-4">
+                    <p id="targetMoves">Target moves: <%= level %></p>
+                    <p id="userMoves">Your moves: 0</p>
+
+                    <button class="text-blue-500">Hint</button>
+                </div>
+
+                <!-- Level Selector -->
+                <form id="levelForm" class="mb-4" action="/levels" method="POST">
+                    <label class="block text-sm font-medium text-gray-700">Select Level:</label>
+                    <select id="level-selector" name="level" onchange="submitForm()"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
+                        <% for(let i=1;i<=10;i++) { %>
+                            <option value="<%=i %>">Level <%=i %>
+                            </option>
+
+                            <% } %>
+                    </select>
+
+                </form>
+
+                <!-- Current Level Display -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Current Level:</label>
+                    <span id="current-level" class="text-lg font-semibold">
+                        <%=level %>
+                    </span>
+                </div>
+
+                <!-- Nevel Level Anchor -->
+                <div class="flex">
+
+                    <a id="previous-game" href="/levels?CurrLevel=<%= level %>&id=0"
+                        class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white mr-1 px-4 py-2 rounded-md">Previous
+                        Level</a>
+                    <a id="next-game" href="/levels?CurrLevel=<%= level %>&id=1"
+                        class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white text-fit ml-1 px-4 py-2 rounded-md">Next
+                        Level</a>
+                </div>
+
+            </div>
+>>>>>>> Stashed changes
 
         <!-- Game Board -->
         <div id="game-board" class="grid grid-cols-5 gap-4 mb-6">
@@ -22,6 +123,7 @@
             <% } %>
         </div>
 
+<<<<<<< Updated upstream
         <!-- Additional Components -->
         <div class="mb-4">
             <!-- Player Information -->
@@ -39,6 +141,30 @@
                     <!-- Add more levels as needed -->
                 </select>
             </div>
+=======
+    </div>
+    <footer class="sticky bg-blue-500 text-white text-center py-2 relative">
+        <p>Developed with 💗 by <b>Warriors</b></p>
+        <p class="text-sm">&copy; <%-new Date().getFullYear() %> || All rights reserved.</p>
+    </footer>
+    <script>
+        // Include your JavaScript logic here to interact with the backend and update the UI
+   let clickNumbers = 0;
+        // Add this script block to set event listeners
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('[id^="cell_"]');
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    clickNumbers++; //increment the click count on clicking button each time.
+                    document.getElementById("userMoves").innerHTML = "Your Moves: " + clickNumbers;//updating the value on each click.
+                    const row = this.dataset.row;
+                    const col = this.dataset.col;
+                    console.log(row, col);
+                    toggleLights(row, col);
+                });
+            });
+        });
+>>>>>>> Stashed changes
 
             <!-- Current Level Display -->
             <div class="mb-4">
