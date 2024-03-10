@@ -9,31 +9,17 @@ const saltRounds = 10;
 env.config();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(express.static("public"));
 app.use(cors());
 app.use(express.json());
 
-<<<<<<< Updated upstream
-const createGrid = () => {
-    const initialGrid = new Array(5).fill().map(() =>
-        new Array(5).fill(true) // Assuming all lights are initially on
-    );
-
-    // Apply a series of random moves to make the grid solvable
-    const moves = 10; // Adjust the number of moves as needed
-
-    for (let i = 0; i < moves; i++) {
-        const randomRow = Math.floor(Math.random() * 5);
-        const randomCol = Math.floor(Math.random() * 5);
-        toggleLights(initialGrid, randomRow, randomCol);
-=======
-const matrixSizeOptions = [4, 4, 4, 5, 5, 5, 6, 6, 6, 6];
+const matrixSizeOptions = [3, 3, 4, 4, 4, 5, 5, 6, 6, 6];
 let board;
 let matrixSize = 4;
 let level = 1;
 
 app.set('view engine', 'ejs');
-
 const isValidPosition = (row, col, grid) => {
     return row >= 0 && row < grid.length && col >= 0 && col < grid[0].length;
 };
@@ -52,27 +38,17 @@ const createGrid = (matrixSize, level, n) => {
         } while (initialGrid[randomRow][randomCol] !== 0); // Continue generating until an unoccupied cell is found
     
         toggleLights(initialGrid, randomRow, randomCol, n);
->>>>>>> Stashed changes
     }
     
 
     return initialGrid;
 };
 
-<<<<<<< Updated upstream
-const toggleLights = (grid, row, col) => {
-    grid[row][col] = !grid[row][col];
-    if (row < 4) grid[row + 1][col] = !grid[row + 1][col];
-    if (row > 0) grid[row - 1][col] = !grid[row - 1][col];
-    if (col < 4) grid[row][col + 1] = !grid[row][col + 1];
-    if (col > 0) grid[row][col - 1] = !grid[row][col - 1];
-=======
 const toggleLights = (grid, row, col, n) => {
     if (isValidPosition(row, col, grid)) {
         grid[row][col] = (grid[row][col] + 1) % n;
         toggleAdjacentLights(grid, row, col, n);
     }
->>>>>>> Stashed changes
 };
 
 const toggleAdjacentLights = (grid, row, col, n) => {
@@ -83,21 +59,6 @@ const toggleAdjacentLights = (grid, row, col, n) => {
         [-1, 0],
     ];
 
-<<<<<<< Updated upstream
-// Initialize Passport and Passport session
-// app.use(passport.initialize());
-// app.use(passport.session());
-
-
-// Home route
-app.get("/", (req, res) => {
-    let board = createGrid();
-    console.log({board});
-    res.render("index.ejs", {board: board});
-});
-
-// Start the server
-=======
     directions.forEach(([dx, dy]) => {
         const newRow = row + dx;
         const newCol = col + dy;
@@ -108,7 +69,7 @@ app.get("/", (req, res) => {
 };
 
 app.get("/", (req, res) => {
-    board = createGrid(matrixSize, level, 2);
+    board = createGrid(matrixSize, level,2);
     res.render("index.ejs", { board, level, matrixSize });
 });
 
@@ -129,7 +90,7 @@ app.get('/levels', (req, res) => {
 
 app.post("/api/toggleLights", (req, res) => {
     const { row, col } = req.body;
-    toggleLights(board, parseInt(row), parseInt(col), 2);
+    toggleLights(board, parseInt(row), parseInt(col),2);
 
     const gameEnded = board.every(row => row.every(cell => !cell));
     res.json({ board, gameEnded });
@@ -141,7 +102,6 @@ app.post("/levels", (req, res) => {
     res.redirect('/');
 });
 
->>>>>>> Stashed changes
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

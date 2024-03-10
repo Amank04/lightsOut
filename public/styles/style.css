@@ -556,12 +556,14 @@ video {
   position: static;
 }
 
+.fixed {
+  position: fixed;
+}
+
 .relative {
   position: relative;
 }
 
-<<<<<<< Updated upstream
-=======
 .sticky {
   position: sticky;
 }
@@ -596,7 +598,6 @@ video {
   margin-top: -2.5rem;
 }
 
->>>>>>> Stashed changes
 .mb-4 {
   margin-bottom: 1rem;
 }
@@ -605,10 +606,6 @@ video {
   margin-bottom: 1.5rem;
 }
 
-<<<<<<< Updated upstream
-.mt-1 {
-  margin-top: 0.25rem;
-=======
 .ml-1 {
   margin-left: 0.25rem;
 }
@@ -619,15 +616,12 @@ video {
 
 .mt-0 {
   margin-top: 0px;
->>>>>>> Stashed changes
 }
 
 .mt-1 {
   margin-top: 0.25rem;
 }
 
-<<<<<<< Updated upstream
-=======
 .mt-2 {
   margin-top: 0.5rem;
 }
@@ -640,7 +634,6 @@ video {
   margin-top: 2rem;
 }
 
->>>>>>> Stashed changes
 .block {
   display: block;
 }
@@ -653,12 +646,12 @@ video {
   display: table;
 }
 
-.grid {
-  display: grid;
-}
-
 .\!grid {
   display: grid !important;
+}
+
+.grid {
+  display: grid;
 }
 
 .contents {
@@ -694,40 +687,34 @@ video {
   height: 100vh;
 }
 
-<<<<<<< Updated upstream
-=======
 .h-svh {
   height: 100svh;
-}
-
-.max-h-fit {
-  max-height: -moz-fit-content;
-  max-height: fit-content;
 }
 
 .min-h-dvh {
   min-height: 100dvh;
 }
 
-.min-h-full {
-  min-height: 100%;
-}
-
->>>>>>> Stashed changes
 .min-h-screen {
   min-height: 100vh;
+}
+
+.w-1 {
+  width: 0.25rem;
 }
 
 .w-10 {
   width: 2.5rem;
 }
 
+.w-12 {
+  width: 3rem;
+}
+
 .w-16 {
   width: 4rem;
 }
 
-<<<<<<< Updated upstream
-=======
 .w-48 {
   width: 12rem;
 }
@@ -737,13 +724,10 @@ video {
   width: fit-content;
 }
 
->>>>>>> Stashed changes
 .w-full {
   width: 100%;
 }
 
-<<<<<<< Updated upstream
-=======
 .w-screen {
   width: 100vw;
 }
@@ -766,25 +750,38 @@ video {
   max-width: 100%;
 }
 
->>>>>>> Stashed changes
 .max-w-md {
   max-width: 28rem;
+}
+
+.max-w-screen-lg {
+  max-width: 1024px;
 }
 
 .border-collapse {
   border-collapse: collapse;
 }
 
+.-translate-x-1 {
+  --tw-translate-x: -0.25rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.-translate-y-1 {
+  --tw-translate-y: -0.25rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .transform {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.resize {
-  resize: both;
+.cursor-pointer {
+  cursor: pointer;
 }
 
-.grid-cols-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.resize {
+  resize: both;
 }
 
 .grid-cols-4 {
@@ -793,6 +790,18 @@ video {
 
 .grid-cols-5 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.grid-cols-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.grid-cols-7 {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .items-center {
@@ -819,6 +828,24 @@ video {
   --tw-space-x-reverse: 0;
   margin-right: calc(1rem * var(--tw-space-x-reverse));
   margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-x-0 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0px * var(--tw-space-x-reverse));
+  margin-left: calc(0px * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
 }
 
 .rounded-lg {
@@ -863,6 +890,11 @@ video {
   background-color: rgb(34 197 94 / var(--tw-bg-opacity));
 }
 
+.bg-teal-300 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(94 234 212 / var(--tw-bg-opacity));
+}
+
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
@@ -878,8 +910,6 @@ video {
   background-color: rgb(234 179 8 / var(--tw-bg-opacity));
 }
 
-<<<<<<< Updated upstream
-=======
 .bg-yellow-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(133 77 14 / var(--tw-bg-opacity));
@@ -889,7 +919,6 @@ video {
   padding: 0px;
 }
 
->>>>>>> Stashed changes
 .p-2 {
   padding: 0.5rem;
 }
@@ -949,6 +978,11 @@ video {
   line-height: 1.25rem;
 }
 
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
 .font-bold {
   font-weight: 700;
 }
@@ -990,6 +1024,16 @@ video {
   text-decoration-line: underline;
 }
 
+.opacity-0 {
+  opacity: 0;
+}
+
+.shadow-lg {
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-md {
   --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
@@ -1000,8 +1044,6 @@ video {
   outline-style: solid;
 }
 
-<<<<<<< Updated upstream
-=======
 .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -1027,7 +1069,6 @@ video {
   background-color: rgb(20 184 166 / var(--tw-bg-opacity));
 }
 
->>>>>>> Stashed changes
 .focus\:border-blue-300:focus {
   --tw-border-opacity: 1;
   border-color: rgb(147 197 253 / var(--tw-border-opacity));
