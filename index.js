@@ -10,9 +10,10 @@ env.config();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static("public"));
+app.use(express.static('public'));
 app.use(cors());
 app.use(express.json());
+
 
 const matrixSizeOptions = [3, 3, 4, 4, 4, 5, 5, 6, 6, 6];
 let board,hintGrid;
@@ -82,6 +83,10 @@ app.get("/", (req, res) => {
     console.log("Hint board: ", hintGrid);
     res.render("index.ejs", { board, level, matrixSize });
 });
+
+app.get("/team",(req,res) => {
+    res.render("team.ejs");
+})
 
 app.get('/levels', (req, res) => {
     const { id, CurrLevel } = req.query;

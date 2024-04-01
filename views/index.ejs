@@ -38,6 +38,16 @@
 #hint-matrix .rounded-md div div {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15); /* Add text shadow for better readability */
 }
+
+ /* Define the transition effect */
+ .transition-effect {
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Define the hover effect */
+.transition-effect:hover {
+    transform: scale(1.1); /* For example, scale the size of the element */
+}
     </style>
     <title>Lights_Out</title>
 </head>
@@ -174,7 +184,8 @@
 
     </div>
     <footer class="bg-blue-500 text-white text-center py-2 relative">
-        <p>Developed with 💗 by <b>Warriors</b></p>
+        <p>Developed with 💗 by <b><a class="font-semibold text-white dark:text-white transition-effect" href="/team">Warriors</a>
+        </b></p>
         <p class="text-sm">&copy; <%-new Date().getFullYear() %> || All rights reserved.</p>
     </footer>
     <script>
