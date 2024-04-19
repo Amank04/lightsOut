@@ -1,0 +1,143 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Team section</title>
+	<!-- <link rel="stylesheet" type="text/css" href="css/styles.css"> -->
+
+	<link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+	*{
+		padding: 0;
+		margin: 0;
+		box-sizing: border-box;
+		font-family: 'Space Grotesk', sans-serif;
+		text-decoration: none;
+	}
+	.team{
+		position: relative;
+		width: 100%;
+		height: 100vh;
+		background: radial-gradient(#e15c82,#d64fad);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+	}
+	.team-content{
+		width: 100%;
+		max-width: 1000px;
+		margin: 0 auto;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, auto));
+		align-items: center;
+		gap: 2rem;
+		text-align: center;
+		margin-top: 4rem;
+	}
+	.team-content img{
+		width: 85%;
+		height: auto;
+		border-radius: 15px;
+		margin-bottom: 15px;
+	}
+	.center h1{
+		color: #fff;
+		font-size: 4rem;
+		text-align: center;
+	}
+	.box{
+		padding: 16px;
+		background: #da3969;
+		border-radius: 15px;
+		transition: all .38s ease;
+	}
+	.box h3{
+		font-size: 23px;
+		font-weight: 600;
+		color: #fff;
+		margin-bottom: 8px;
+	}
+	.icons i{
+		display: inline-block;
+		color: #fff;
+		font-size: 20px;
+		margin: 0 8px;
+		transition: all .38s ease;
+	}
+	.icons i:hover{
+		transform: scale(1.2);
+	}
+	.box:hover{
+		transform: translateY(-10px);
+		/* cursor: pointer; */
+	}
+	
+	@media(max-width: 1240px){
+		.team{
+			width: 100%;
+			height: auto;
+			padding: 90px 2%;
+		}
+		.center h1{
+			font-size: 3.2rem;
+		}
+	}
+  </style>
+</head>
+<body>
+
+
+	<section class="team">
+
+
+		<div class="center">
+			<h1>Our Team</h1>
+		</div>
+
+		<div class="team-content">
+			<div class="box">
+				<img src="photos\aman.png" class="rounded-full">
+				<h3>Aman Kumar</h3>
+				<div class="icons">
+					<a href="https://www.linkedin.com/in/amangrd8/"><i class="ri-linkedin-fill" ></i></a>
+					<a href="https://github.com/Amank04"><i class="ri-GitHub-fill"></i></a>
+				</div>
+			</div>
+
+			<div class="box">
+				<img src="photos\aditya.png">
+				<h3>Aditya Singh</h3>
+				<div class="icons">
+					<a href="https://www.linkedin.com/in/aditya-singh-5b581125b/"><i class="ri-linkedin-fill" ></i></a>
+					<a href="https://github.com/adityasingh151"><i class="ri-GitHub-fill"></i></a>
+				</div>
+			</div>
+
+			<div class="box">
+				<img src="photos\tushitaa.png">
+				<h3>Tushitaa Ojha</h3>
+				<div class="icons">
+					<a href="https://www.linkedin.com/in/tushitaa-narayan-ojha-67a295272/"><i class="ri-linkedin-fill" ></i></a>
+					<a href="https://github.com/Tushitaa18"><i class="ri-GitHub-fill"></i></a>
+				</div>
+			</div>
+
+			<div class="box">
+				<img src="photos\vikrant.png">
+				<h3>Vikrant Mishra</h3>
+				<div class="icons">
+					<a href="https://www.linkedin.com/in/vikrant-mishra-03524625a/"><i class="ri-linkedin-fill" ></i></a>
+					<a href="https://github.com/Vikrantmishra"><i class="ri-GitHub-fill"></i></a>
+				</div>
+			</div>
+
+		</div>
+	</section>
+
+</body>
+</html>
