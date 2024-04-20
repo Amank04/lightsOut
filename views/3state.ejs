@@ -108,7 +108,7 @@
                     <h2 class="text-4xl font-bold mb-4">Congratulations!</h2>
                     <p class="text-lg">You won the game! 🎉</p>
                     <p id="total-moves" class="text-lg"></p>
-                    <p id="minimum-moves" class="text-lg">Target Moves: <%=level %>
+                    <p id="minimum-moves" class="text-lg">Target Moves: <%= 2 * level %>
                     </p>
                 </div>
 
@@ -118,7 +118,7 @@
                 <div class="grid">
                     <!-- Player Information -->
                     <div id="moves" class="flex items-center justify-between mb-4">
-                        <p id="target-moves" class="text-xs">Target Moves: <%=level %>
+                        <p id="target-moves" class="text-xs">Target Moves: <%=2*level %>
                         </p>
                         <p id="user-moves" class="text-xs">Your Moves: 0 </p>
                         <button id="hint-button" class="text-blue-500">Hint</button>
@@ -269,11 +269,11 @@
                 document.getElementById("hint-button").addEventListener('click', async function () {
                     document.body.style.backdropFilter = 'blur(15px)';
                     try {
-                        const response = await fetch("/api/getHint", { method: "GET" });
-                        console.log("response of getHInt: ",response);
+                        const response = await fetch("/api/getHint3", { method: "GET" });
+                        console.log("response of getHInt3: ",response);
                         const hintMatrix = await response.json();
-                        console.log("hint matrix: ", hintMatrix.hintGrid);
-                        updateHintBoard(hintMatrix.hintGrid); // Update the hint board with the received hint matrix
+                        console.log("hint matrix: ", hintMatrix.hintGrid3);
+                        updateHintBoard(hintMatrix.hintGrid3); // Update the hint board with the received hint matrix
                         document.getElementById('outer-hint-board').classList.remove('hidden'); // Show the hint board
                         document.getElementById('complete-game').classList.add('hidden'); // hide the complete game board
                     } catch (error) {
