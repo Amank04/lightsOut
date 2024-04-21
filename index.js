@@ -77,11 +77,18 @@ const toggleAdjacentLights = (grid, row, col, n) => {
     });
 };
 
+
 app.get("/", (req, res) => {
     board = createGrid(matrixSize, level,2);
     // console.log("Game board:", board);
     // console.log("Hint board: ", hintGrid);
     res.render("index.ejs", { board, level, matrixSize });
+});
+app.get("/login", (req, res) => {
+    res.render("login.ejs" ,{ page: 'login' });
+});
+app.get('/signup', (req, res) => {
+    res.render('login.ejs', { page: 'signup' });
 });
 
 app.get("/team",(req,res) => {
@@ -118,6 +125,11 @@ app.get("/api/getHint", (req,res) => {
     res.json({hintGrid});
 })
 
+app.get("/api/getHint3", (req,res) => {
+    // console.log("hint api is called successfully.");
+    res.json({hintGrid3});
+})
+
 app.post("/levels", (req, res) => {
     level = parseInt(req.body.level);
     matrixSize = matrixSizeOptions[level - 1];
@@ -142,8 +154,8 @@ const create3Grid = (matrixSize3, level3) => {
     );
     
     // Hint grid for 3-state LightsOut game.
-    hintGrid3 = Array.from({length: matrixSize}, () => 
-        Array(matrixSize).fill(0)
+    hintGrid3 = Array.from({length: matrixSize3}, () => 
+        Array(matrixSize3).fill(0)
      );
 
     // Apply a series of random moves to make the grid solvable
@@ -166,13 +178,14 @@ const create3Grid = (matrixSize3, level3) => {
 
 const toggle3Lights = (grid, row, col) => {
     console.log("I am called.");
-
+      
     // Ensure row and col are within bounds
-    console.log(grid);
-    console.log(grid.length, grid[0].length);
-    if (row >= 0 && row < grid.length && col >= 0 && col < grid[0].length) {
+    // console.log(grid);
+    // console.log(grid.length, grid[0].length);
+    if (isValidPosition(row, col, grid)) {
         // Toggle through the three colors (0, 1, 2)
         grid[row][col] = (grid[row][col] + 1) % 3;
+        hintGrid3[row][col] = (hintGrid3[row][col] + 2) % 3;
     }
 
     // Toggle lights in adjacent rows and columns if within bounds
@@ -197,31 +210,27 @@ var matrixSize3 = 3;
 app.get("/state3", (req, res) => {
     // const level = 2;
     board3 = create3Grid(matrixSize3, level3);
-    console.log("level33:" + level3)
-    console.log({ board3 });
-    console.log(board3.length, board3[0].length)
-    res.render("3state.ejs", { board: board3, level: level3, matrixSize: matrixSize3 },);
+    // console.log("level3:" + level3)
+    // console.log({ board3 });
+    // console.log(board3.length, board3[0].length)
+    res.render("3state.ejs", { board: board3, level: level3, matrixSize: matrixSize3 });
 });
 
 
 app.get('/levels3', (req, res) => {
-    // Access the "level" parameter from the query string
-    console.log(req.query);
-    if (parseInt(req.query.id) === 0 && level3>1) { //Previous level is clicked.
-        level3 = parseInt(req.query.CurrLevel) - 1;
-        if(level3>3 && level3<6) matrixSize3 = 4; //Changling the matrixSize3 on going above level 7.
-        else if(level3>=6 && level3<=8) matrixSize3 = 5;
-        else if(level3>8) matrixSize3 = 6; //otherwise, matrixSize3 = 5.
-    } else if(parseInt(req.query.id)===1 && level3<=9) { //Next level3 is clicked.
-        level3 = parseInt(req.query.CurrLevel) + 1;
-        if(level3>3 && level3<6) matrixSize3 = 4;
-        else if(level3>=6 && level3<=8) matrixSize3 = 5;
-        else if(level3>8) matrixSize3 = 6;
+    const { id, CurrLevel } = req.query;
+console.log("Current level was: ", level3,id, CurrLevel);
+    if (id === '0' && level3 > 1) {
+        level3 = parseInt(CurrLevel) - 1;
+        
+    } else if (id === '1' && level3 < 10) {
+        
+        level3 = parseInt(CurrLevel) + 1;
     } else {
-       res.send(`<script>alert("Crossing the edge limit!");window.location.href = "/";</script>`);
-
-
+        return res.send('<script>alert("Crossing the edge limit!");window.location.href = "/state3";</script>');
     }
+
+    matrixSize3 = matrixSizeOptions[level3 - 1];
     res.redirect("/state3");
 
     // Use the "level" value as needed
@@ -252,12 +261,8 @@ var level3 = 1;
 app.post("/levels3", (req, res) => {
     // console.log(req.body);
     level3 = parseInt(req.body.level);
-    if(level3<=3) matrixSize3=4;
-    else if(level3>3 && level3<6) {
-        matrixSize3 = 4;
-    } else if(level3>=6 && level3 <=8) {
-        matrixSize3 = 5;
-    } else if(level3>8) matrixSize3 = 6;
+    
+    matrixSize3 = matrixSizeOptions[level3 - 1];
     res.redirect('/state3');
 })
 
