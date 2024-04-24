@@ -2,6 +2,11 @@ import express from "express";
 import bodyParser from "body-parser";
 import env from "dotenv";
 import cors from "cors";
+import nodemailer from 'nodemailer';
+import otpGenerator from 'otp-generator';
+import hideEmailPhone from 'partially-hide-email-phone';
+import pg from "pg";
+import bcrypt from 'bcrypt';
 
 const app = express();
 const port = 3000;
@@ -13,6 +18,19 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 app.use(cors());
 app.use(express.json());
+
+const db = new pg.Client({
+    user: "postgres.bvkxqtdfumreyeenursf",
+    host: "aws-0-ap-south-1.pooler.supabase.com",
+    database: "postgres",
+    password: "Supabase@8877",
+    port: 5432,
+  });
+  db.connect();
+
+
+
+// Database code ends here
 
 
 const matrixSizeOptions = [3, 3, 4, 4, 4, 5, 5, 6, 6, 6];
@@ -268,6 +286,362 @@ app.post("/levels3", (req, res) => {
 
 // 3-state lights out game ends here.
 
+
+// OTP verification part starts here 
+
+// Create a Nodemailer transporter
+const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: 'lightsout1811@gmail.com',
+      pass: 'gquw msim rpvj yprw'
+    }
+  });
+  
+
+ // Endpoint for sending OTP and storing in temporary table
+app.post('/signup', (req, res) => {
+  const { name, email, password } = req.body;
+
+  // Check if user already exists
+  db.query("SELECT * FROM Users WHERE email = $1", [email])
+      .then(result => {
+          if (result.rows.length > 0) {
+              // User already exists, handle accordingly (e.g., show error message)
+              res.render("login.ejs",{ page: 'login', userExists: 'true' });
+          } else {
+              // User does not exist, generate OTP and continue with signup process
+              const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
+              const expirationTime = new Date();
+              expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 1 minute from now
+
+              const mailOptions = {
+                from: 'lightsout1811@gmail.com',
+                to: email,
+                subject: '🌟 Lights-Out Game: Email Verification OTP 🌟',
+                html: `
+                    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                        <h2 style="color: #007bff; text-align: center;">Welcome to the Lights-Out Game!</h2>
+                        <p>Dear ${name},</p>
+                        <p>Thank you for joining our exciting Lights-Out game project! 🎉 To ensure the security of your account and protect your gaming experience, we kindly ask you to verify your email address.</p>
+                        <p style="font-weight: bold;">Your One-Time Password (OTP) for email verification is:</p>
+                        <p style="font-size: 24px; padding: 10px 0; text-align: center; background-color: #f0f0f0; border-radius: 5px;">${OTP}</p>
+                        <p>Please enter this OTP within the game interface to verify your email address and unlock the full potential of the Lights-Out experience.</p>
+                        <p>If you did not request this verification, please disregard this email.</p>
+                        <p>Thank you for being part of our gaming community!</p>
+                        <p style="margin-top: 30px;">Best regards,</p>
+                        <p>The Lights-Out Game Team</p>
+                    </div>
+                `
+              };
+
+              // Store email, OTP, and expiration time in temporary table OTP
+              db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime]);
+
+              transporter.sendMail(mailOptions, (error, info) => {
+                  if (error) {
+                      console.error('Error sending OTP:', error);
+                      return res.status(500).send('Error sending OTP');
+                  } else {
+                      console.log('Email sent:', info.response);
+                      const partial = hideEmailPhone(email);
+                      console.log(partial); // Output: e*****@example.com
+                      res.render("login", { page: "OTP", name: name, email: email, password: password, partialEmail: partial, wrongOTP: "false" });
+                  }
+              });
+          }
+      })
+      .catch(error => {
+          console.error('Error checking user existence:', error);
+          return res.status(500).send('Error checking user existence');
+      });
+});
+
+
+// Verify OTP endpoint
+app.post('/verifyOTP', (req, res) => {
+  const { name, email, password, enteredOTP } = req.body;
+  const partial = hideEmailPhone(email);
+
+  if (!email || !enteredOTP) {
+      return res.status(400).send('Invalid OTP data');
+  }
+
+  // Fetch stored OTP and expiration time corresponding to the email
+  const otpQuery = {
+      text: 'SELECT otp, expiration_time FROM OTP WHERE email = $1',
+      values: [email],
+  };
+
+  db.query(otpQuery)
+      .then(result => {
+          if (result.rows.length === 0) {
+              return res.status(404).send('Email not found or OTP expired');
+          }
+
+          const storedOTP = result.rows[0].otp;
+          const expirationTime = new Date(result.rows[0].expiration_time);
+
+          // Check if OTP is expired
+          if (expirationTime <= new Date()) {
+              return res.status(400).send('OTP expired');
+          }
+
+          if (enteredOTP === storedOTP) {
+              // OTP is valid, move user data to permanent Users table
+              const { name, password } = req.body;
+              bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+                  if (err) {
+                      console.error('Error hashing password:', err);
+                      return res.status(500).send('Error hashing password');
+                  }
+                  const insertUserQuery = {
+                      text: 'INSERT INTO Users (name, email, password) VALUES ($1, $2, $3)',
+                      values: [name, email, hashedPassword],
+                  };
+                  db.query(insertUserQuery)
+                      .then(() => {
+                          // Delete email and OTP from temporary table OTP
+                          const deleteOTPQuery = {
+                              text: 'DELETE FROM OTP WHERE email = $1',
+                              values: [email],
+                          };
+                          db.query(deleteOTPQuery)
+                              .then(() => {
+                                  return res.status(200).send('OTP verified and user registered successfully');
+                              })
+                              .catch(error => {
+                                  console.error('Error deleting OTP:', error);
+                                  return res.status(500).send('Error deleting OTP');
+                              });
+                      })
+                      .catch(error => {
+                          console.error('Error inserting user:', error);
+                          return res.status(500).send('Error inserting user');
+                      });
+                      //Deleting otp from the temporary database.
+                      db.query("DELETE FROM otp WHERE email = $1",[email]);
+              });
+          } else {
+              res.render("login", { page: "OTP", name: name, email: email, password: password, partialEmail: partial, wrongOTP: "true" });
+          }
+      })
+      .catch(error => {
+          console.error('Error fetching OTP:', error);
+          return res.status(500).send('Error fetching OTP');
+      });
+});
+
+// section for resetting password starts here
+
+app.get('/forgot-password' , (req,res)=>{
+  res.render("forgetPassword" , {page : 'enterEmail'})
+})
+
+
+app.post('/forgot-password', (req, res) => {
+  const { email } = req.body;
+
+  // Check if the email already exists in the Users table
+  db.query("SELECT * FROM Users WHERE email = $1", [email])
+    .then(result => {
+      if (result.rows.length == 0) {
+        // User don't exists, redirect to signup page with a message
+        res.render("login.ejs", { page: 'signup', userExists: 'false' });
+      } else {
+        // User does not exist, generate OTP and continue with the process
+        const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
+        const expirationTime = new Date();
+        expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 3 minutes from now
+
+        const mailOptions = {
+          from: 'lightsout1811@gmail.com',
+          to: email,
+          subject: '🌟 Lights-Out Game: Forgot Password OTP 🌟',
+          html: `
+              <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                  <h2 style="color: #007bff; text-align: center;">Forgot Password OTP</h2>
+                  <p>Your One-Time Password (OTP) for password reset is:</p>
+                  <p style="font-size: 24px; padding: 10px 0; text-align: center; background-color: #f0f0f0; border-radius: 5px;">${OTP}</p>
+                  <p>Please use this OTP to reset your password.</p>
+                  <p>If you did not request this, please ignore this email.</p>
+              </div>
+          `
+        };
+
+        // Store email, OTP, and expiration time in a temporary table (Assuming you have a table named OTP)
+        db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime])
+          .then(() => {
+            // Send the OTP to the user's email
+            transporter.sendMail(mailOptions, (error, info) => {
+              if (error) {
+                console.error('Error sending OTP:', error);
+                return res.status(500).send('Error sending OTP');
+              } else {
+                console.log('Email sent:', info.response);
+                // Render the forgetPassword page with the page set to "enterOTP"
+                res.render("forgetPassword", { page: "enterOTP", email: email });
+              }
+            });
+          })
+          .catch(error => {
+            console.error('Error storing OTP in the database:', error);
+            return res.status(500).send('Error storing OTP');
+          });
+      }
+    })
+    .catch(error => {
+      console.error('Error checking user existence:', error);
+      return res.status(500).send('Error checking user existence');
+    });
+});
+
+app.post('/enter-otp', (req, res) => {
+  const { email, enteredOTP } = req.body;
+  // console.log("EnteredOTp",req.body);
+
+  // Fetch stored OTP and expiration time corresponding to the email
+  const otpQuery = {
+    text: 'SELECT otp, expiration_time FROM OTP WHERE email = $1',
+    values: [email],
+  };
+
+  db.query(otpQuery)
+    .then(result => {
+      if (result.rows.length === 0) {
+        res.render("forgetPassword" , {page : 'enterEmail',message:"Email not found!"});
+      }
+
+      const storedOTP = result.rows[0].otp;
+      // console.log("StoredOTP",storedOTP);
+      const expirationTime = new Date(result.rows[0].expiration_time);
+
+      // Check if OTP is expired
+      if (expirationTime <= new Date()) {
+        res.render("forgetPassword" , {page : 'enterEmail',message:"OTP is expired!"});
+      }
+
+      if (enteredOTP === storedOTP) {
+        // OTP is valid, render resetPassword page
+        res.render("forgetPassword", { page: "resetPassword", email:email });
+        
+        //Delete otp from temporary table.
+        db.query("DELETE FROM otp WHERE email = $1",[email]);
+      } else {
+        // Invalid OTP, render enterOTP page with error message
+        res.render("forgetPassword", { page: "enterOTP", message: "Invalid OTP",email:email });
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching OTP:', error);
+      return res.status(500).send('Error fetching OTP');
+    });
+});
+
+app.post("/resend-otp", (req, res) => {
+    const { email } = req.body;
+
+    // Check if OTP already exists for the email
+    db.query("SELECT * FROM OTP WHERE email = $1", [email])
+        .then(result => {
+            if (result.rows.length > 0) {
+                // OTP already exists, delete the existing row
+                db.query("DELETE FROM OTP WHERE email = $1", [email])
+                    .then(() => {
+                        // Proceed with generating a new OTP and sending it
+                        const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
+                        const expirationTime = new Date();
+                        expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 3 minutes from now
+
+                        // Store the new OTP in the OTP table
+                        db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime])
+                            .then(() => {
+                                // Send the new OTP to the user
+                                const mailOptions = {
+                                    from: 'lightsout1811@gmail.com',
+                                    to: email,
+                                    subject: '🌟 Lights-Out Game: Email Verification OTP 🌟',
+                                    html: `
+                                        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                                            <h2 style="color: #007bff; text-align: center;">Welcome back to the Lights-Out Game!</h2>
+                                            <p>Dear user,</p>
+                                            <p>Your request for a new OTP has been received. Please use the following OTP to verify your email address:</p>
+                                            <p style="font-size: 24px; padding: 10px 0; text-align: center; background-color: #f0f0f0; border-radius: 5px;">${OTP}</p>
+                                            <p>If you did not request this OTP, please disregard this email.</p>
+                                            <p>Thank you for being part of our gaming community!</p>
+                                            <p style="margin-top: 30px;">Best regards,</p>
+                                            <p>The Lights-Out Game Team</p>
+                                        </div>
+                                    `
+                                };
+
+                                transporter.sendMail(mailOptions, (error, info) => {
+                                    if (error) {
+                                        console.error('Error sending OTP:', error);
+                                        return res.status(500).send('Error sending OTP');
+                                    } else {
+                                        console.log('Email sent:', info.response);
+                                        // res.send('OTP has been resent successfully');
+                                        res.render("forgetPassword", { page: "enterOTP", email: email });
+                                    }
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error storing new OTP:', error);
+                                return res.status(500).send('Error storing new OTP');
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error deleting existing OTP:', error);
+                        return res.status(500).send('Error deleting existing OTP');
+                    });
+            } else {
+                // No existing OTP found for the email
+                res.status(404).send('No existing OTP found for the provided email');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking existing OTP:', error);
+            return res.status(500).send('Error checking existing OTP');
+        });
+});
+
+
+app.post('/reset-password', (req, res) => {
+  const { email, password, confirmPassword } = req.body;
+
+  // Check if password and confirmPassword match
+  if (password !== confirmPassword) {
+    return res.status(400).send('Passwords do not match');
+  }
+
+  // Hash the password
+  bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+    if (err) {
+      console.error('Error hashing password:', err);
+      return res.status(500).send('Error hashing password');
+    }
+
+    // Update the password in the Users table
+    const updatePasswordQuery = {
+      text: 'UPDATE Users SET password = $1 WHERE email = $2',
+      values: [hashedPassword, email],
+    };
+
+    db.query(updatePasswordQuery)
+      .then(() => {
+        // Password updated successfully
+        res.status(200).send('Password updated successfully');
+      })
+      .catch(error => {
+        console.error('Error updating password:', error);
+        res.status(500).send('Error updating password');
+      });
+  });
+});
+
+
+  
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
