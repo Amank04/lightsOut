@@ -11,11 +11,12 @@ import session from "express-session";
 import cookieParser from "cookie-parser";
 import { Strategy } from "passport-local";
 import passport from "passport";
+import dotenv from 'dotenv';
 
 const app = express();
 const port = 3000;
 const saltRounds = 10;
-env.config();
+dotenv.config();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -25,7 +26,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use(session({
-    secret: 'lights-out',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -33,16 +34,18 @@ app.use(session({
     }
 }));
 
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 const db = new pg.Client({
-    user: "postgres.bvkxqtdfumreyeenursf",
-    host: "aws-0-ap-south-1.pooler.supabase.com",
-    database: "postgres",
-    password: "Supabase@8877",
-    port: 5432,
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
 });
+
 db.connect();
 
 
@@ -725,15 +728,31 @@ app.post('/reset-password', (req, res) => {
 });
 
 app.get("/userProfile", (req, res) => {
-
     if (req.isAuthenticated()) {
-        // res.render("submit.ejs");
-        console.log(req.user.name);
-        res.render("userProfile", { name: req.user.name, email: req.user.email });
+        // Fetch user progress data from the database
+        const userEmail = req.user.email; // Assuming you have the user's email in the req.user object
+        const query = {
+            text: 'SELECT level, moves, targetmoves FROM userprogress WHERE email = $1',
+            values: [userEmail]
+        };
+
+        db.query(query)
+            .then(result => {
+                const progress = result.rows;
+                res.render("userProfile", {
+                    name: req.user.name,
+                    email: req.user.email,
+                    progress: progress
+                });
+            })
+            .catch(err => {
+                console.error("Error fetching user progress:", err);
+                res.status(500).send("Internal Server Error");
+            });
     } else {
         res.redirect("/login");
     }
-})
+});
 
 
 // Add route to handle profile updates
