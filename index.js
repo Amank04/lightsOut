@@ -7,6 +7,10 @@ import otpGenerator from 'otp-generator';
 import hideEmailPhone from 'partially-hide-email-phone';
 import pg from "pg";
 import bcrypt from 'bcrypt';
+import session from "express-session";
+import cookieParser from "cookie-parser";
+import { Strategy } from "passport-local";
+import passport from "passport";
 
 const app = express();
 const port = 3000;
@@ -15,9 +19,22 @@ env.config();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(express.static('public'));
 app.use(cors());
 app.use(express.json());
+
+app.use(session({
+    secret: 'topsecret', 
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24,  
+    }
+  }));
+  
+  app.use(passport.initialize());
+  app.use(passport.session());
 
 const db = new pg.Client({
     user: "postgres.bvkxqtdfumreyeenursf",
@@ -524,7 +541,7 @@ app.post('/enter-otp', (req, res) => {
       if (enteredOTP === storedOTP) {
         // OTP is valid, render resetPassword page
         res.render("forgetPassword", { page: "resetPassword", email:email });
-        
+       
         //Delete otp from temporary table.
         db.query("DELETE FROM otp WHERE email = $1",[email]);
       } else {
@@ -640,8 +657,65 @@ app.post('/reset-password', (req, res) => {
   });
 });
 
-
+// Endpoint for user login
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
   
+    db.query("SELECT * FROM Users WHERE email = $1", [email])
+      .then(result => {
+        if (result.rows.length === 0) {
+          // User does not exist with the provided email
+          res.render("login.ejs", { page: 'login', userExists2: 'false' });
+        } else {
+          // User exists, compare hashed password
+          const hashedPassword = result.rows[0].password;
+          bcrypt.compare(password, hashedPassword, (err, passwordMatch) => {
+            if (err) {
+              console.error('Error comparing passwords:', err);
+              return res.status(500).send('Error comparing passwords');
+            }
+            if (passwordMatch) {
+              // Passwords match, redirect user to userProfile.ejs page
+              res.render("userProfile", { name: result.rows[0].name, email: email });
+            } else {
+              // Passwords do not match, handle accordingly (e.g., show error message)
+              res.render("login.ejs", { page: 'login', userExists2: 'true' });
+            }
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error checking user existence:', error);
+        return res.status(500).send('Error checking user existence');
+      });
+  });
+  
+
+// Add route to handle profile updates
+app.post('/edit-profile', (req, res) => {
+    const { name } = req.body;
+    const email = req.session.user.email; // Assuming you're using session for authentication
+
+    // Update the name in the Users table
+    const updateNameQuery = {
+        text: 'UPDATE Users SET name = $1 WHERE email = $2',
+        values: [name, email],
+    };
+
+    db.query(updateNameQuery)
+        .then(() => {
+            // Name updated successfully, render userProfile with updated name
+            res.render("userProfile", { name: name, email: email });
+        })
+        .catch(error => {
+            console.error('Error updating name:', error);
+            res.status(500).send('Error updating name');
+        });
+});
+
+
+
+ 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
