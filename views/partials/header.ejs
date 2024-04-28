@@ -60,13 +60,15 @@
       <div class="relative">
           <a href="/login" title="Login" class="login-button flex items-center justify-center text-white text-sm mt-2 relative">
               <img src="https://static-assets-web.flixcart.com/batman-returns/batman-returns/p/images/profile-52e0dc.svg" alt="Login" class="w-9 h-9 rounded-full mr-1" width="24" height="24">
-              <span>Login</span>
+              <span>
+                <%=name %>
+              </span>
           </a>
           <!-- Dropdown menu -->
           <div class="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-md shadow-md dropdown-menu">
               <a href="#" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Profile</a>
               <a href="#" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Settings</a>
-              <a href="#" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Logout</a>
+              <a href="/logout" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Logout</a>
           </div>
       </div>
   </header>
