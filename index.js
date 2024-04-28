@@ -1,6 +1,5 @@
 import express from "express";
 import bodyParser from "body-parser";
-import env from "dotenv";
 import cors from "cors";
 import nodemailer from 'nodemailer';
 import otpGenerator from 'otp-generator';
@@ -54,7 +53,7 @@ db.connect();
 
 
 const matrixSizeOptions = [3, 3, 4, 4, 4, 5, 5, 6, 6, 6];
-let board, hintGrid, hintGrid3;
+let hintGrid, hintGrid3;
 let matrixSize = 3;
 let level = 1;
 
@@ -83,7 +82,6 @@ const createGrid = (matrixSize, level, n) => {
 
         toggleLights(initialGrid, randomRow, randomCol, n);
     }
-
 
     return initialGrid;
 };
@@ -117,7 +115,8 @@ const toggleAdjacentLights = (grid, row, col, n) => {
 
 
 app.get("/", (req, res) => {
-    board = createGrid(matrixSize, level, 2);
+    req.session.board = createGrid(matrixSize, level, 2);
+    let board = req.session.board;
     // console.log("Game board:", board);
     // console.log("Hint board: ", hintGrid);
     if (req.isAuthenticated()) {
@@ -164,12 +163,13 @@ app.get('/levels', (req, res) => {
 
 app.post("/api/toggleLights", (req, res) => {
     const { row, col} = req.body;
+    let board = req.session.board ;
     // console.log(req.body);
     console.log("Current level: ", level);
-    toggleLights(board, parseInt(row), parseInt(col), 2);
-    console.log(board);
+    toggleLights(req.session.board, parseInt(row), parseInt(col), 2);
+    console.log(req.session.board);
 
-    const gameEnded = board.every(row => row.every(cell => !cell));
+    const gameEnded = req.session.board.every(row => row.every(cell => !cell));
 
     if (req.isAuthenticated() && gameEnded) {
         const { email } = req.user;
@@ -219,7 +219,6 @@ app.post("/api/toggleLights", (req, res) => {
         });
     }
     
-
     res.json({ board, gameEnded });
 });
 
