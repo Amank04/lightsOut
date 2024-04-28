@@ -163,11 +163,11 @@
         <h2>Welcome to Lights Out</h2>
         <% if (page === 'login') { %>
             <h3>Login</h3>
-            <% if(locals.userExists=='true')  {%>
+            <% if(locals.userExists=='true')  {%> 
                 <p id="userExists" class="text-green-500">User already exists!</p>
                 <% } %>
             <form action="/login" method="post">
-                <input type="text" name="Name" placeholder="Name" required><br>
+                <input type="email" name="email" placeholder="Email" required><br>
                 <input type="password" name="password" placeholder="Password" required><br>
                 <input type="submit" value="Login">
                 <a class="forgot-password" href="/forgot-password">Forgot Password?</a>
