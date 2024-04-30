@@ -487,7 +487,7 @@ app.post('/verifyOTP', async (req, res) => {
                 };
 
                 try {
-                    await db.query(insertUserQuery);
+                    
 
                     // Delete email and OTP from temporary table OTP
                     const deleteOTPQuery = {
@@ -497,11 +497,13 @@ app.post('/verifyOTP', async (req, res) => {
 
                     await db.query(deleteOTPQuery);
                     // Authenticate user and set session/cookie
-                    req.login({ name, email, password }, (err) => {
+                    req.login({ name, email, password },async (err) => {
                         if (err) {
                             console.error('Error logging in:', err);
                             return res.status(500).send('Error logging in');
                         }
+                        
+                        await db.query(insertUserQuery);
                         return res.status(200).send('OTP verified and user registered successfully');
                     });
                 } catch (error) {
@@ -812,7 +814,7 @@ passport.use('local', new Strategy({
 
 // Serialize and deserialize user
 passport.serializeUser((user, cb) => {
-    cb(null, user.id); // Assuming 'id' is a unique identifier for the user
+    cb(null, user); // Assuming 'id' is a unique identifier for the user
 });
 
 passport.deserializeUser(async (id, cb) => {
