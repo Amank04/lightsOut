@@ -224,7 +224,7 @@
                             headers: {
                                 "Content-Type": "application/json",
                             },
-                            body: JSON.stringify({ row, col }),
+                            body: JSON.stringify({ row, col, clickCount }),
                         });
 
                         const data = await response.json();

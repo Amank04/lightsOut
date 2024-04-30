@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet"> <!-- Include Poppins font -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> <!-- Include Font Awesome for icons -->
-    <link rel="stylesheet" href="/styles/style.css"> <!-- Include your CSS file here -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="/styles/style.css">
     <link rel="icon" href="/photos/lights_out_icon.jpeg" type="image/jpeg">
 
     <style>
@@ -24,14 +23,14 @@
 
         header {
             width: 100%;
-            background-color: #fa32a0; /* Light pink background color */
+            background-color: #fa32a0;
             padding: 20px 0;
             text-align: center;
-            color: #fff; /* White text color */
+            color: #fff;
             font-size: 24px;
             font-weight: 700;
             text-transform: uppercase;
-            border-bottom: 2px solid #ff7eb9; /* Dark pink border bottom */
+            border-bottom: 2px solid #ff7eb9;
         }
 
         .profile-container {
@@ -40,7 +39,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
-            max-width: 800px; /* Increased maximum width */
+            max-width: 800px;
             width: 100%;
             position: relative;
             overflow: hidden;
@@ -68,7 +67,7 @@
         }
 
         .profile-table th {
-            background-color: #f2f2f2; /* Light gray background for table header */
+            background-color: #f2f2f2;
         }
 
         .profile-info {
@@ -101,34 +100,51 @@
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
         }
+
+        .home-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #fa32a0;
+            border: none;
+            font-size: 20px;
+            color: #fff;
+            cursor: pointer;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-transform: uppercase;
+        }
+
+        .home-button:hover {
+            text-decoration: underline;
+        }
     </style>
     <title>User Profile</title>
 </head>
-
 <body>
     <header>
         Lights Out
     </header>
+    <button class="home-button" onclick="window.location.href='/';">Home</button>
     <div class="profile-container">
-        <h2>Welcome Back, <span id="username"><%= name %></span>!</h2>
+        <h2>Welcome <span id="username"><%= name %></span>!</h2>
         <div class="profile-details">
             <table class="profile-table">
                 <tr>
-                    <th>Field</th>
-                    <th>Information</th>
+                    <th>Level</th>
+                    <th>Moves</th>
+                    <th>Target Moves</th>
                 </tr>
-                <tr>
-                    <td>Name:</td>
-                    <td><span id="user-name"><%= name %></span></td>
-                </tr>
-                <tr>
-                    <td>Email:</td>
-                    <td><span id="user-email"><%= email %></span></td>
-                </tr>
+                <% progress.sort((a, b) => a.level - b.level).forEach(item => { %>
+                    <tr>
+                        <td><%= item.level %></td>
+                        <td><%= item.moves %></td>
+                        <td><%= item.targetmoves %></td>
+                    </tr>
+                <% }); %>
             </table>
         </div>
         <a href="/edit-profile" class="edit-profile">Edit Profile</a>
     </div>
 </body>
-
 </html>
