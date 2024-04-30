@@ -504,7 +504,8 @@ app.post('/verifyOTP', async (req, res) => {
                         }
                         
                         await db.query(insertUserQuery);
-                        return res.status(200).send('OTP verified and user registered successfully');
+                        // return res.status(200).send('OTP verified and user registered successfully');
+                        res.redirect("/");
                     });
                 } catch (error) {
                     console.error('Error inserting user:', error);
@@ -814,12 +815,12 @@ passport.use('local', new Strategy({
 
 // Serialize and deserialize user
 passport.serializeUser((user, cb) => {
-    cb(null, user); // Assuming 'id' is a unique identifier for the user
+    cb(null, user.email); // Assuming 'id' is a unique identifier for the user
 });
 
-passport.deserializeUser(async (id, cb) => {
+passport.deserializeUser(async (email, cb) => {
     try {
-        const result = await db.query('SELECT * FROM Users WHERE id = $1', [id]);
+        const result = await db.query('SELECT * FROM Users WHERE email = $1', [email]);
         if (result.rows.length > 0) {
             const user = result.rows[0];
             cb(null, user);
@@ -835,7 +836,7 @@ passport.deserializeUser(async (id, cb) => {
 app.post('/login', passport.authenticate('local', {
     successRedirect: '/userProfile',
     failureRedirect: '/login',
-    failureFlash: true // Enable flash messages for failure redirects
+    // failureFlash: true // Enable flash messages for failure redirects
 }));
 
 // Logout route
