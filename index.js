@@ -1,6 +1,5 @@
 import express from "express";
 import bodyParser from "body-parser";
-import env from "dotenv";
 import cors from "cors";
 import nodemailer from 'nodemailer';
 import otpGenerator from 'otp-generator';
@@ -11,11 +10,12 @@ import session from "express-session";
 import cookieParser from "cookie-parser";
 import { Strategy } from "passport-local";
 import passport from "passport";
+import dotenv from 'dotenv';
 
 const app = express();
 const port = 3000;
 const saltRounds = 10;
-env.config();
+dotenv.config();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -25,25 +25,27 @@ app.use(cors());
 app.use(express.json());
 
 app.use(session({
-    secret: 'topsecret', 
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
-      maxAge: 1000 * 60 * 60 * 24,  
+        maxAge: 1000 * 60 * 60 * 24,
     }
-  }));
-  
-  app.use(passport.initialize());
-  app.use(passport.session());
+}));
+
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 const db = new pg.Client({
-    user: "postgres.bvkxqtdfumreyeenursf",
-    host: "aws-0-ap-south-1.pooler.supabase.com",
-    database: "postgres",
-    password: "Supabase@8877",
-    port: 5432,
-  });
-  db.connect();
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
+});
+
+db.connect();
 
 
 
@@ -51,45 +53,41 @@ const db = new pg.Client({
 
 
 const matrixSizeOptions = [3, 3, 4, 4, 4, 5, 5, 6, 6, 6];
-let board,hintGrid,hintGrid3;
-let matrixSize = 3;
-let level = 1;
 
 app.set('view engine', 'ejs');
 const isValidPosition = (row, col, grid) => {
     return row >= 0 && row < grid.length && col >= 0 && col < grid[0].length;
 };
-const createGrid = (matrixSize, level, n) => {
-    const initialGrid = Array.from({ length: matrixSize }, () =>
-        Array(matrixSize).fill(0)
-    );
+const createGrid = (req, n) => {
+    const initialGrid = Array.from({ length: req.session.matrixSize }, () =>
+    Array(req.session.matrixSize).fill(0)
+);
 
-     hintGrid = Array.from({length: matrixSize}, () => 
-        Array(matrixSize).fill(0)
-     );
-    // console.log("hint board:",hintGrid);
+req.session.hintGrid = Array.from({ length: req.session.matrixSize }, () =>
+Array(req.session.matrixSize).fill(0)
+);
+// console.log("hint board:",hintGrid);
 
-    for (let i = 0; i < level; i++) {
-        let randomRow, randomCol;
+for (let i = 0; i < req.session.level; i++) {
+    let randomRow, randomCol;
     
-        // Generate unique random values
-        do {
-            randomRow = Math.floor(Math.random() * matrixSize);
-            randomCol = Math.floor(Math.random() * matrixSize);
-        } while (initialGrid[randomRow][randomCol] !== 0); // Continue generating until an unoccupied cell is found
+    // Generate unique random values
+    do {
+        randomRow = Math.floor(Math.random() * req.session.matrixSize);
+        randomCol = Math.floor(Math.random() * req.session.matrixSize);
+    } while (initialGrid[randomRow][randomCol] !== 0); // Continue generating until an unoccupied cell is found
     
-        toggleLights(initialGrid, randomRow, randomCol, n);
-    }
-    
+    toggleLights(req,initialGrid, randomRow, randomCol, n);
+}
 
-    return initialGrid;
+return initialGrid;
 };
 
-const toggleLights = (grid, row, col, n) => {
+const toggleLights = (req,grid, row, col, n) => {
     // console.log(hintGrid)
     if (isValidPosition(row, col, grid)) {
         grid[row][col] = (grid[row][col] + 1) % n;
-        hintGrid[row][col] = (hintGrid[row][col] + 1) % n;
+        req.session.hintGrid[row][col] = (req.session.hintGrid[row][col] + 1) % n;
         // console.log("Hint board: ",hintGrid);
         toggleAdjacentLights(grid, row, col, n);
     }
@@ -102,7 +100,7 @@ const toggleAdjacentLights = (grid, row, col, n) => {
         [1, 0],
         [-1, 0],
     ];
-
+    
     directions.forEach(([dx, dy]) => {
         const newRow = row + dx;
         const newCol = col + dy;
@@ -114,60 +112,128 @@ const toggleAdjacentLights = (grid, row, col, n) => {
 
 
 app.get("/", (req, res) => {
-    board = createGrid(matrixSize, level,2);
+    req.session.matrixSize = req.session.matrixSize || 3;
+    req.session.level = req.session.level || 1;
+    req.session.board = createGrid(req, 2);
+    let board = req.session.board;
     // console.log("Game board:", board);
     // console.log("Hint board: ", hintGrid);
-    res.render("index.ejs", { board, level, matrixSize });
+    if (req.isAuthenticated()) {
+        res.render("index.ejs", { board, level:req.session.level, matrixSize:req.session.matrixSize, name: req.user.name });
+        // res.render("submit.ejs");
+    } else {
+        // res.redirect("/login");
+        res.render("index.ejs", { board, level:req.session.level, matrixSize:req.session.matrixSize, name: "Login" });
+    }
 });
+
 app.get("/login", (req, res) => {
-    res.render("login.ejs" ,{ page: 'login' });
+    
+    if (req.isAuthenticated()) {
+        res.redirect("/userProfile");
+    } else {
+        // res.redirect("/login");
+        res.render("login.ejs", { page: 'login' });
+    }
 });
+
 app.get('/signup', (req, res) => {
     res.render('login.ejs', { page: 'signup' });
 });
 
-app.get("/team",(req,res) => {
+app.get("/team", (req, res) => {
     res.render("team.ejs");
 })
 
 app.get('/levels', (req, res) => {
     const { id, CurrLevel } = req.query;
 
-    if (id === '0' && level > 1) {
-        level = parseInt(CurrLevel) - 1;
-    } else if (id === '1' && level < 10) {
-        level = parseInt(CurrLevel) + 1;
+    if (id === '0' && req.session.level > 1) {
+        req.session.level = parseInt(CurrLevel) - 1;
+    } else if (id === '1' && req.session.level < 10) {
+        req.session.level = parseInt(CurrLevel) + 1;
     } else {
         return res.send('<script>alert("Crossing the edge limit!");window.location.href = "/";</script>');
     }
 
-    matrixSize = matrixSizeOptions[level - 1];
+    req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
     res.redirect("/");
 });
 
 app.post("/api/toggleLights", (req, res) => {
-    const { row, col } = req.body;
-    console.log(req.body);
-    toggleLights(board, parseInt(row), parseInt(col),2);
-    console.log(board);
+    const { row, col} = req.body;
+    let board = req.session.board ;
+    // console.log(req.body);
+    console.log("Current level: ", req.session.level);
+    toggleLights(req,req.session.board, parseInt(row), parseInt(col), 2);
+    console.log(req.session.board);
 
-    const gameEnded = board.every(row => row.every(cell => !cell));
+    const gameEnded = req.session.board.every(row => row.every(cell => !cell));
+
+    if (req.isAuthenticated() && gameEnded) {
+        const { email } = req.user;
+        const {clickCount } = req.body; // Assuming level and clickCount are available from the request body
+    
+        // Check if data already exists for the email and level
+        db.query(
+            "SELECT moves, targetMoves FROM UserProgress WHERE email = $1 AND level = $2",
+            [email, req.session.level]
+        )
+        .then(result => {
+            if (result.rows.length > 0) {
+                // Data exists for the email and level, check if current moves is less than stored moves
+                const storedMoves = result.rows[0].moves;
+                const storedTargetMoves = result.rows[0].targetMoves;
+    
+                if (clickCount < storedMoves) {
+                    // Update the existing record with the new moves if current moves is less
+                    db.query(
+                        "UPDATE UserProgress SET moves = $1 WHERE email = $2 AND level = $3",
+                        [clickCount, email, req.session.level]
+                    )
+                    .then(() => {
+                        console.log(`Updated moves for level ${req.session.level} and email ${email}`);
+                    })
+                    .catch(error => {
+                        console.error("Error updating moves:", error);
+                    });
+                }
+                // If current moves is not less than stored moves, do nothing (leave it as is)
+            } else {
+                // Data does not exist for the email and level, insert a new record
+                db.query(
+                    "INSERT INTO UserProgress (email, level, moves, targetMoves) VALUES ($1, $2, $3, $4)",
+                    [email, req.session.level, clickCount, req.session.level]
+                )
+                .then(() => {
+                    console.log(`Inserted new progress for level ${req.session.level} and email ${email}`);
+                })
+                .catch(error => {
+                    console.error("Error inserting progress:", error);
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error checking existing progress:", error);
+        });
+    }
+    
     res.json({ board, gameEnded });
 });
 
-app.get("/api/getHint", (req,res) => {
+app.get("/api/getHint", (req, res) => {
     // console.log("hint api is called successfully.");
-    res.json({hintGrid});
+    res.json({ hintGrid:req.session.hintGrid });
 })
 
-app.get("/api/getHint3", (req,res) => {
+app.get("/api/getHint3", (req, res) => {
     // console.log("hint api is called successfully.");
-    res.json({hintGrid3});
+    res.json({ hintGrid3:req.session.hintGrid3 });
 })
 
 app.post("/levels", (req, res) => {
-    level = parseInt(req.body.level);
-    matrixSize = matrixSizeOptions[level - 1];
+    req.session.level = parseInt(req.body.level);
+    req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
     res.redirect('/');
 });
 
@@ -176,51 +242,51 @@ app.post("/levels", (req, res) => {
 app.post("/state", (req, res) => {
     let state = req.body.level;
 
-    if(state == 'Pro') {
-     res.redirect("/state3");
+    if (state == 'Pro') {
+        res.redirect("/state3");
     } else {
         res.redirect("/");
     }
-})
+});
 
-const create3Grid = (matrixSize3, level3) => {
+const create3Grid = (req,matrixSize3, level3) => {
     const initialGrid = new Array(matrixSize3).fill().map(() =>
         new Array(matrixSize3).fill(0) // Initialize with color white (0)
     );
-    
+
     // Hint grid for 3-state LightsOut game.
-    hintGrid3 = Array.from({length: matrixSize3}, () => 
+    req.session.hintGrid3 = Array.from({ length: matrixSize3 }, () =>
         Array(matrixSize3).fill(0)
-     );
+    );
 
     // Apply a series of random moves to make the grid solvable
     const moves = level3; // Adjust the number of moves as needed
 
     for (let i = 0; i < moves; i++) {
         let randomRow, randomCol;
-    
+
         // Generate unique random values
         do {
             randomRow = Math.floor(Math.random() * matrixSize3);
             randomCol = Math.floor(Math.random() * matrixSize3);
         } while (initialGrid[randomRow][randomCol] !== 0); // Continue generating until an unoccupied cell is found
-    
-        toggle3Lights(initialGrid, randomRow, randomCol);
+
+        toggle3Lights(req,initialGrid, randomRow, randomCol);
     }
 
     return initialGrid;
 };
 
-const toggle3Lights = (grid, row, col) => {
-    console.log("I am called.");
-      
+const toggle3Lights = (req,grid, row, col) => {
+    // console.log("I am called.");
+
     // Ensure row and col are within bounds
     // console.log(grid);
     // console.log(grid.length, grid[0].length);
     if (isValidPosition(row, col, grid)) {
         // Toggle through the three colors (0, 1, 2)
         grid[row][col] = (grid[row][col] + 1) % 3;
-        hintGrid3[row][col] = (hintGrid3[row][col] + 2) % 3;
+        req.session.hintGrid3[row][col] = (req.session.hintGrid3[row][col] + 2) % 3;
     }
 
     // Toggle lights in adjacent rows and columns if within bounds
@@ -239,42 +305,43 @@ const toggle3Lights = (grid, row, col) => {
 };
 
 
-var board3;
-var matrixSize3 = 3;
+// var board3;
+// var matrixSize3 = 3;
 // Home route
 app.get("/state3", (req, res) => {
+    req.session.matrixSize3 = req.session.matrixSize3 || 3;
+    req.session.level3 = req.session.level3 || 1;
     // const level = 2;
-    board3 = create3Grid(matrixSize3, level3);
+    req.session.board3 = create3Grid(req,req.session.matrixSize3, req.session.level3);
     // console.log("level3:" + level3)
     // console.log({ board3 });
     // console.log(board3.length, board3[0].length)
-    res.render("3state.ejs", { board: board3, level: level3, matrixSize: matrixSize3 });
+    if (req.isAuthenticated()) {
+        res.render("3state.ejs", { board:req.session.board3, level:req.session.level3, matrixSize:req.session.matrixSize3, name: req.user.name });
+        // res.render("submit.ejs");
+    } else {
+        // res.redirect("/login");
+        res.render("3state.ejs", { board:req.session.board3, level:req.session.level3, matrixSize:req.session.matrixSize3, name: "Login" });
+    }
+    // res.render("3state.ejs", { board: board3, level: level3, matrixSize: matrixSize3 });
 });
 
 
 app.get('/levels3', (req, res) => {
     const { id, CurrLevel } = req.query;
-console.log("Current level was: ", level3,id, CurrLevel);
-    if (id === '0' && level3 > 1) {
-        level3 = parseInt(CurrLevel) - 1;
-        
-    } else if (id === '1' && level3 < 10) {
-        
-        level3 = parseInt(CurrLevel) + 1;
+    // console.log("Current level was: ", level3, id, CurrLevel);
+    if (id === '0' && req.session.level3 > 1) {
+        req.session.level3 = parseInt(CurrLevel) - 1;
+
+    } else if (id === '1' && req.session.level3 < 10) {
+
+        req.session.level3 = parseInt(CurrLevel) + 1;
     } else {
         return res.send('<script>alert("Crossing the edge limit!");window.location.href = "/state3";</script>');
     }
 
-    matrixSize3 = matrixSizeOptions[level3 - 1];
+    req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
     res.redirect("/state3");
-
-    // Use the "level" value as needed
-    // console.log('Level:', typeof level);
-
-    // Your logic for handling the level value goes here
-
-    // Send a response if needed
-    // res.send(`Level: ${level}`);
 });
 
 // API endpoint to toggle lights based on user input
@@ -283,21 +350,22 @@ app.post("/api/toggle3Lights", (req, res) => {
     row = parseInt(row), col = parseInt(col); // parsing string to number.
     // console.log(typeof (row));
     // Toggle lights on the server 
-    toggle3Lights(board3, row, col);
+    toggle3Lights(req,req.session.board3, row, col);
     // console.log(board3);
-    console.log(board3);
+    console.log(req.session.board3);
     // Check if the game has ended
-    const gameEnded = board3.every(row => row.every(c => !c));
+    const gameEnded = req.session.board3.every(row => row.every(c => !c));
     // console.log(gameEnded);
 
-    res.json({ board3, gameEnded });
+    res.json({ board3:req.session.board3, gameEnded });
 });
-var level3 = 1;
+
+// var level3 = 1;
 app.post("/levels3", (req, res) => {
     // console.log(req.body);
-    level3 = parseInt(req.body.level);
-    
-    matrixSize3 = matrixSizeOptions[level3 - 1];
+    req.session.level3 = parseInt(req.body.level);
+
+    req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
     res.redirect('/state3');
 })
 
@@ -310,33 +378,33 @@ app.post("/levels3", (req, res) => {
 const transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
-      user: 'lightsout1811@gmail.com',
-      pass: 'gquw msim rpvj yprw'
+        user: 'lightsout1811@gmail.com',
+        pass: process.env.E_PASSWORD
     }
-  });
-  
+});
 
- // Endpoint for sending OTP and storing in temporary table
+
+// Endpoint for sending OTP and storing in temporary table
 app.post('/signup', (req, res) => {
-  const { name, email, password } = req.body;
+    const { name, email, password } = req.body;
 
-  // Check if user already exists
-  db.query("SELECT * FROM Users WHERE email = $1", [email])
-      .then(result => {
-          if (result.rows.length > 0) {
-              // User already exists, handle accordingly (e.g., show error message)
-              res.render("login.ejs",{ page: 'login', userExists: 'true' });
-          } else {
-              // User does not exist, generate OTP and continue with signup process
-              const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
-              const expirationTime = new Date();
-              expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 1 minute from now
+    // Check if user already exists
+    db.query("SELECT * FROM Users WHERE email = $1", [email])
+        .then(result => {
+            if (result.rows.length > 0) {
+                // User already exists, handle accordingly (e.g., show error message)
+                res.render("login.ejs", { page: 'login', userExists: 'true' });
+            } else {
+                // User does not exist, generate OTP and continue with signup process
+                const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
+                const expirationTime = new Date();
+                expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 1 minute from now
 
-              const mailOptions = {
-                from: 'lightsout1811@gmail.com',
-                to: email,
-                subject: '🌟 Lights-Out Game: Email Verification OTP 🌟',
-                html: `
+                const mailOptions = {
+                    from: 'lightsout1811@gmail.com',
+                    to: email,
+                    subject: '🌟 Lights-Out Game: Email Verification OTP 🌟',
+                    html: `
                     <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
                         <h2 style="color: #007bff; text-align: center;">Welcome to the Lights-Out Game!</h2>
                         <p>Dear ${name},</p>
@@ -350,132 +418,134 @@ app.post('/signup', (req, res) => {
                         <p>The Lights-Out Game Team</p>
                     </div>
                 `
-              };
+                };
 
-              // Store email, OTP, and expiration time in temporary table OTP
-              db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime]);
+                // Store email, OTP, and expiration time in temporary table OTP
+                db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime]);
 
-              transporter.sendMail(mailOptions, (error, info) => {
-                  if (error) {
-                      console.error('Error sending OTP:', error);
-                      return res.status(500).send('Error sending OTP');
-                  } else {
-                      console.log('Email sent:', info.response);
-                      const partial = hideEmailPhone(email);
-                      console.log(partial); // Output: e*****@example.com
-                      res.render("login", { page: "OTP", name: name, email: email, password: password, partialEmail: partial, wrongOTP: "false" });
-                  }
-              });
-          }
-      })
-      .catch(error => {
-          console.error('Error checking user existence:', error);
-          return res.status(500).send('Error checking user existence');
-      });
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        console.error('Error sending OTP:', error);
+                        return res.status(500).send('Error sending OTP');
+                    } else {
+                        console.log('Email sent:', info.response);
+                        const partial = hideEmailPhone(email);
+                        console.log(partial); // Output: e*****@example.com
+                        res.render("login", { page: "OTP", name: name, email: email, password: password, partialEmail: partial, wrongOTP: "false" });
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error checking user existence:', error);
+            return res.status(500).send('Error checking user existence');
+        });
 });
 
+// Assuming 'db' is your database connection
 
-// Verify OTP endpoint
-app.post('/verifyOTP', (req, res) => {
-  const { name, email, password, enteredOTP } = req.body;
-  const partial = hideEmailPhone(email);
+app.post('/verifyOTP', async (req, res) => {
+    const { name, email, password, enteredOTP } = req.body;
+    const partial = hideEmailPhone(email);
 
-  if (!email || !enteredOTP) {
-      return res.status(400).send('Invalid OTP data');
-  }
+    if (!email || !enteredOTP) {
+        return res.status(400).send('Invalid OTP data');
+    }
 
-  // Fetch stored OTP and expiration time corresponding to the email
-  const otpQuery = {
-      text: 'SELECT otp, expiration_time FROM OTP WHERE email = $1',
-      values: [email],
-  };
+    try {
+        // Fetch stored OTP and expiration time corresponding to the email
+        const otpQuery = {
+            text: 'SELECT otp, expiration_time FROM OTP WHERE email = $1',
+            values: [email],
+        };
 
-  db.query(otpQuery)
-      .then(result => {
-          if (result.rows.length === 0) {
-              return res.status(404).send('Email not found or OTP expired');
-          }
+        const result = await db.query(otpQuery);
 
-          const storedOTP = result.rows[0].otp;
-          const expirationTime = new Date(result.rows[0].expiration_time);
+        if (result.rows.length === 0) {
+            return res.status(404).send('Email not found or OTP expired');
+        }
 
-          // Check if OTP is expired
-          if (expirationTime <= new Date()) {
-              return res.status(400).send('OTP expired');
-          }
+        const storedOTP = result.rows[0].otp;
+        const expirationTime = new Date(result.rows[0].expiration_time);
 
-          if (enteredOTP === storedOTP) {
-              // OTP is valid, move user data to permanent Users table
-              const { name, password } = req.body;
-              bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
-                  if (err) {
-                      console.error('Error hashing password:', err);
-                      return res.status(500).send('Error hashing password');
-                  }
-                  const insertUserQuery = {
-                      text: 'INSERT INTO Users (name, email, password) VALUES ($1, $2, $3)',
-                      values: [name, email, hashedPassword],
-                  };
-                  db.query(insertUserQuery)
-                      .then(() => {
-                          // Delete email and OTP from temporary table OTP
-                          const deleteOTPQuery = {
-                              text: 'DELETE FROM OTP WHERE email = $1',
-                              values: [email],
-                          };
-                          db.query(deleteOTPQuery)
-                              .then(() => {
-                                  return res.status(200).send('OTP verified and user registered successfully');
-                              })
-                              .catch(error => {
-                                  console.error('Error deleting OTP:', error);
-                                  return res.status(500).send('Error deleting OTP');
-                              });
-                      })
-                      .catch(error => {
-                          console.error('Error inserting user:', error);
-                          return res.status(500).send('Error inserting user');
-                      });
-                      //Deleting otp from the temporary database.
-                      db.query("DELETE FROM otp WHERE email = $1",[email]);
-              });
-          } else {
-              res.render("login", { page: "OTP", name: name, email: email, password: password, partialEmail: partial, wrongOTP: "true" });
-          }
-      })
-      .catch(error => {
-          console.error('Error fetching OTP:', error);
-          return res.status(500).send('Error fetching OTP');
-      });
+        // Check if OTP is expired
+        if (expirationTime <= new Date()) {
+            return res.status(400).send('OTP expired');
+        }
+
+        if (enteredOTP === storedOTP) {
+            // OTP is valid, move user data to permanent Users table
+            bcrypt.hash(password, saltRounds, async (err, hashedPassword) => {
+                if (err) {
+                    console.error('Error hashing password:', err);
+                    return res.status(500).send('Error hashing password');
+                }
+
+                const insertUserQuery = {
+                    text: 'INSERT INTO Users (name, email, password) VALUES ($1, $2, $3)',
+                    values: [name, email, hashedPassword],
+                };
+
+                try {
+                    await db.query(insertUserQuery);
+
+                    // Delete email and OTP from temporary table OTP
+                    const deleteOTPQuery = {
+                        text: 'DELETE FROM OTP WHERE email = $1',
+                        values: [email],
+                    };
+
+                    await db.query(deleteOTPQuery);
+                    // Authenticate user and set session/cookie
+                    req.login({ name, email, password }, (err) => {
+                        if (err) {
+                            console.error('Error logging in:', err);
+                            return res.status(500).send('Error logging in');
+                        }
+                        return res.status(200).send('OTP verified and user registered successfully');
+                    });
+                } catch (error) {
+                    console.error('Error inserting user:', error);
+                    return res.status(500).send('Error inserting user');
+                }
+            });
+        } else {
+            // Wrong OTP handling (redirect or render login with error message)
+            res.render('login', { page: 'OTP', name, email, password, partialEmail: partial, wrongOTP: true });
+        }
+    } catch (error) {
+        console.error('Error fetching OTP:', error);
+        return res.status(500).send('Error fetching OTP');
+    }
 });
 
 // section for resetting password starts here
 
-app.get('/forgot-password' , (req,res)=>{
-  res.render("forgetPassword" , {page : 'enterEmail'})
+app.get('/forgot-password', (req, res) => {
+    res.render("forgetPassword", { page: 'enterEmail' })
 })
 
 
 app.post('/forgot-password', (req, res) => {
-  const { email } = req.body;
+    const { email } = req.body;
 
-  // Check if the email already exists in the Users table
-  db.query("SELECT * FROM Users WHERE email = $1", [email])
-    .then(result => {
-      if (result.rows.length == 0) {
-        // User don't exists, redirect to signup page with a message
-        res.render("login.ejs", { page: 'signup', userExists: 'false' });
-      } else {
-        // User does not exist, generate OTP and continue with the process
-        const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
-        const expirationTime = new Date();
-        expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 3 minutes from now
+    // Check if the email already exists in the Users table
+    db.query("SELECT * FROM Users WHERE email = $1", [email])
+        .then(result => {
+            if (result.rows.length == 0) {
+                // User don't exists, redirect to signup page with a message
+                res.render("login.ejs", { page: 'signup', userExists: 'false' });
+            } else {
+                // User does not exist, generate OTP and continue with the process
+                const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
+                const expirationTime = new Date();
+                expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 3 minutes from now
 
-        const mailOptions = {
-          from: 'lightsout1811@gmail.com',
-          to: email,
-          subject: '🌟 Lights-Out Game: Forgot Password OTP 🌟',
-          html: `
+                const mailOptions = {
+                    from: 'lightsout1811@gmail.com',
+                    to: email,
+                    subject: '🌟 Lights-Out Game: Forgot Password OTP 🌟',
+                    html: `
               <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
                   <h2 style="color: #007bff; text-align: center;">Forgot Password OTP</h2>
                   <p>Your One-Time Password (OTP) for password reset is:</p>
@@ -484,75 +554,75 @@ app.post('/forgot-password', (req, res) => {
                   <p>If you did not request this, please ignore this email.</p>
               </div>
           `
-        };
+                };
 
-        // Store email, OTP, and expiration time in a temporary table (Assuming you have a table named OTP)
-        db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime])
-          .then(() => {
-            // Send the OTP to the user's email
-            transporter.sendMail(mailOptions, (error, info) => {
-              if (error) {
-                console.error('Error sending OTP:', error);
-                return res.status(500).send('Error sending OTP');
-              } else {
-                console.log('Email sent:', info.response);
-                // Render the forgetPassword page with the page set to "enterOTP"
-                res.render("forgetPassword", { page: "enterOTP", email: email });
-              }
-            });
-          })
-          .catch(error => {
-            console.error('Error storing OTP in the database:', error);
-            return res.status(500).send('Error storing OTP');
-          });
-      }
-    })
-    .catch(error => {
-      console.error('Error checking user existence:', error);
-      return res.status(500).send('Error checking user existence');
-    });
+                // Store email, OTP, and expiration time in a temporary table (Assuming you have a table named OTP)
+                db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime])
+                    .then(() => {
+                        // Send the OTP to the user's email
+                        transporter.sendMail(mailOptions, (error, info) => {
+                            if (error) {
+                                console.error('Error sending OTP:', error);
+                                return res.status(500).send('Error sending OTP');
+                            } else {
+                                console.log('Email sent:', info.response);
+                                // Render the forgetPassword page with the page set to "enterOTP"
+                                res.render("forgetPassword", { page: "enterOTP", email: email });
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error storing OTP in the database:', error);
+                        return res.status(500).send('Error storing OTP');
+                    });
+            }
+        })
+        .catch(error => {
+            console.error('Error checking user existence:', error);
+            return res.status(500).send('Error checking user existence');
+        });
 });
 
 app.post('/enter-otp', (req, res) => {
-  const { email, enteredOTP } = req.body;
-  // console.log("EnteredOTp",req.body);
+    const { email, enteredOTP } = req.body;
+    // console.log("EnteredOTp",req.body);
 
-  // Fetch stored OTP and expiration time corresponding to the email
-  const otpQuery = {
-    text: 'SELECT otp, expiration_time FROM OTP WHERE email = $1',
-    values: [email],
-  };
+    // Fetch stored OTP and expiration time corresponding to the email
+    const otpQuery = {
+        text: 'SELECT otp, expiration_time FROM OTP WHERE email = $1',
+        values: [email],
+    };
 
-  db.query(otpQuery)
-    .then(result => {
-      if (result.rows.length === 0) {
-        res.render("forgetPassword" , {page : 'enterEmail',message:"Email not found!"});
-      }
+    db.query(otpQuery)
+        .then(result => {
+            if (result.rows.length === 0) {
+                res.render("forgetPassword", { page: 'enterEmail', message: "Email not found!" });
+            }
 
-      const storedOTP = result.rows[0].otp;
-      // console.log("StoredOTP",storedOTP);
-      const expirationTime = new Date(result.rows[0].expiration_time);
+            const storedOTP = result.rows[0].otp;
+            // console.log("StoredOTP",storedOTP);
+            const expirationTime = new Date(result.rows[0].expiration_time);
 
-      // Check if OTP is expired
-      if (expirationTime <= new Date()) {
-        res.render("forgetPassword" , {page : 'enterEmail',message:"OTP is expired!"});
-      }
+            // Check if OTP is expired
+            if (expirationTime <= new Date()) {
+                res.render("forgetPassword", { page: 'enterEmail', message: "OTP is expired!" });
+            }
 
-      if (enteredOTP === storedOTP) {
-        // OTP is valid, render resetPassword page
-        res.render("forgetPassword", { page: "resetPassword", email:email });
-       
-        //Delete otp from temporary table.
-        db.query("DELETE FROM otp WHERE email = $1",[email]);
-      } else {
-        // Invalid OTP, render enterOTP page with error message
-        res.render("forgetPassword", { page: "enterOTP", message: "Invalid OTP",email:email });
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching OTP:', error);
-      return res.status(500).send('Error fetching OTP');
-    });
+            if (enteredOTP === storedOTP) {
+                // OTP is valid, render resetPassword page
+                res.render("forgetPassword", { page: "resetPassword", email: email });
+
+                //Delete otp from temporary table.
+                db.query("DELETE FROM otp WHERE email = $1", [email]);
+            } else {
+                // Invalid OTP, render enterOTP page with error message
+                res.render("forgetPassword", { page: "enterOTP", message: "Invalid OTP", email: email });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching OTP:', error);
+            return res.status(500).send('Error fetching OTP');
+        });
 });
 
 app.post("/resend-otp", (req, res) => {
@@ -625,71 +695,65 @@ app.post("/resend-otp", (req, res) => {
 
 
 app.post('/reset-password', (req, res) => {
-  const { email, password, confirmPassword } = req.body;
+    const { email, password, confirmPassword } = req.body;
 
-  // Check if password and confirmPassword match
-  if (password !== confirmPassword) {
-    return res.status(400).send('Passwords do not match');
-  }
-
-  // Hash the password
-  bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
-    if (err) {
-      console.error('Error hashing password:', err);
-      return res.status(500).send('Error hashing password');
+    // Check if password and confirmPassword match
+    if (password !== confirmPassword) {
+        return res.status(400).send('Passwords do not match');
     }
 
-    // Update the password in the Users table
-    const updatePasswordQuery = {
-      text: 'UPDATE Users SET password = $1 WHERE email = $2',
-      values: [hashedPassword, email],
-    };
+    // Hash the password
+    bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+        if (err) {
+            console.error('Error hashing password:', err);
+            return res.status(500).send('Error hashing password');
+        }
 
-    db.query(updatePasswordQuery)
-      .then(() => {
-        // Password updated successfully
-        res.status(200).send('Password updated successfully');
-      })
-      .catch(error => {
-        console.error('Error updating password:', error);
-        res.status(500).send('Error updating password');
-      });
-  });
+        // Update the password in the Users table
+        const updatePasswordQuery = {
+            text: 'UPDATE Users SET password = $1 WHERE email = $2',
+            values: [hashedPassword, email],
+        };
+
+        db.query(updatePasswordQuery)
+            .then(() => {
+                // Password updated successfully
+                res.status(200).send('Password updated successfully');
+            })
+            .catch(error => {
+                console.error('Error updating password:', error);
+                res.status(500).send('Error updating password');
+            });
+    });
 });
 
-// Endpoint for user login
-app.post('/login', (req, res) => {
-    const { email, password } = req.body;
-  
-    db.query("SELECT * FROM Users WHERE email = $1", [email])
-      .then(result => {
-        if (result.rows.length === 0) {
-          // User does not exist with the provided email
-          res.render("login.ejs", { page: 'login', userExists2: 'false' });
-        } else {
-          // User exists, compare hashed password
-          const hashedPassword = result.rows[0].password;
-          bcrypt.compare(password, hashedPassword, (err, passwordMatch) => {
-            if (err) {
-              console.error('Error comparing passwords:', err);
-              return res.status(500).send('Error comparing passwords');
-            }
-            if (passwordMatch) {
-              // Passwords match, redirect user to userProfile.ejs page
-              res.render("userProfile", { name: result.rows[0].name, email: email });
-            } else {
-              // Passwords do not match, handle accordingly (e.g., show error message)
-              res.render("login.ejs", { page: 'login', userExists2: 'true' });
-            }
-          });
-        }
-      })
-      .catch(error => {
-        console.error('Error checking user existence:', error);
-        return res.status(500).send('Error checking user existence');
-      });
-  });
-  
+app.get("/userProfile", (req, res) => {
+    if (req.isAuthenticated()) {
+        // Fetch user progress data from the database
+        const userEmail = req.user.email; // Assuming you have the user's email in the req.user object
+        const query = {
+            text: 'SELECT level, moves, targetmoves FROM userprogress WHERE email = $1',
+            values: [userEmail]
+        };
+
+        db.query(query)
+            .then(result => {
+                const progress = result.rows;
+                res.render("userProfile", {
+                    name: req.user.name,
+                    email: req.user.email,
+                    progress: progress
+                });
+            })
+            .catch(err => {
+                console.error("Error fetching user progress:", err);
+                res.status(500).send("Internal Server Error");
+            });
+    } else {
+        res.redirect("/login");
+    }
+});
+
 
 // Add route to handle profile updates
 app.post('/edit-profile', (req, res) => {
@@ -713,9 +777,76 @@ app.post('/edit-profile', (req, res) => {
         });
 });
 
+// Define Passport Local Strategy
+passport.use('local', new Strategy({
+    usernameField: 'email', // Assuming 'email' is the field name for username
+    passwordField: 'password' // Assuming 'password' is the field name for password
+}, async (email, password, cb) => {
+    // Your authentication logic here
+    try {
+        // Query the database to find user by email
+        const result = await db.query('SELECT * FROM Users WHERE email = $1', [email]);
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+            const storedHashedPassword = user.password;
+
+            // Compare passwords
+            bcrypt.compare(password, storedHashedPassword, (err, valid) => {
+                if (err) {
+                    return cb(err);
+                } else {
+                    if (valid) {
+                        return cb(null, user);
+                    } else {
+                        return cb(null, false, { message: 'Incorrect password' });
+                    }
+                }
+            });
+        } else {
+            return cb(null, false, { message: 'User not found' });
+        }
+    } catch (err) {
+        return cb(err);
+    }
+}));
+
+// Serialize and deserialize user
+passport.serializeUser((user, cb) => {
+    cb(null, user.id); // Assuming 'id' is a unique identifier for the user
+});
+
+passport.deserializeUser(async (id, cb) => {
+    try {
+        const result = await db.query('SELECT * FROM Users WHERE id = $1', [id]);
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+            cb(null, user);
+        } else {
+            cb(new Error('User not found'));
+        }
+    } catch (err) {
+        cb(err);
+    }
+});
+
+// Route for user login using Passport.js
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/userProfile',
+    failureRedirect: '/login',
+    failureFlash: true // Enable flash messages for failure redirects
+}));
+
+// Logout route
+app.get("/logout", (req, res) => {
+    req.logout(function (err) {
+        if (err) {
+            return next(err);
+        }
+        res.redirect("/");
+    });
+});
 
 
- 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
