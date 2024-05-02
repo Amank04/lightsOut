@@ -163,8 +163,10 @@
         <h2>Welcome to Lights Out</h2>
         <% if (page === 'login') { %>
             <h3>Login</h3>
-            <% if(locals.userExists=='true')  {%> 
-                <p id="userExists" class="text-green-500">User already exists!</p>
+            <% if(locals.message)  {%> 
+                <p id="userExists" class="text-pink-500">
+                    <%=locals.message %>
+                </p>
                 <% } %>
             <form action="/login" method="post">
                 <input type="email" name="email" placeholder="Email" required><br>
@@ -189,8 +191,10 @@
         <% } else if (page === 'OTP') { %>
             <h3>Sign Up</h3>
             <h4>Verify OTP for <%= partialEmail %></h4>
-            <% if(wrongOTP=="true")  {%>
-            <p id = "wrongOTP" class="text-red-600">OTP entered is wrong! Try again.</p>
+            <% if(locals.message)  {%>
+            <p id = "wrongOTP" class="text-red-600">
+                <%=message %>
+            </p>
             <% } %>
             <form action="/verifyOTP" method="post">
                 <input type="hidden" name="email" value="<%= email %>"> <!-- Assuming you pass the email as a variable -->

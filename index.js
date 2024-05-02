@@ -8,6 +8,11 @@ import pg from "pg";
 import bcrypt from 'bcrypt';
 import session from "express-session";
 import cookieParser from "cookie-parser";
+// import flash from "express-flash";
+import flash from "connect-flash";
+import { matrix, add } from 'mathjs';
+
+
 import { Strategy } from "passport-local";
 import passport from "passport";
 import dotenv from 'dotenv';
@@ -24,15 +29,19 @@ app.use(express.static('public'));
 app.use(cors());
 app.use(express.json());
 
+
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24,
+        maxAge: 1000 * 60 * 60 * 24 * 10,
     }
 }));
 
+
+// Use express-flash middleware
+app.use(flash());
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -132,8 +141,16 @@ app.get("/login", (req, res) => {
     if (req.isAuthenticated()) {
         res.redirect("/userProfile");
     } else {
-        // res.redirect("/login");
-        res.render("login.ejs", { page: 'login' });
+        
+        const errorMessage = req.flash('error')[0]; // Retrieve flash message
+        
+        if(req.flash('error')) {
+
+            res.render('login', { message: errorMessage, page:'login' }); // Pass error message to your login view
+        } else {
+            
+            res.render("login.ejs", { page: 'login' });
+        }
     }
 });
 
@@ -164,7 +181,9 @@ app.post("/api/toggleLights", (req, res) => {
     const { row, col} = req.body;
     let board = req.session.board ;
     // console.log(req.body);
+    console.log(req.session.level,req.session.board);
     console.log("Current level: ", req.session.level);
+    
     toggleLights(req,req.session.board, parseInt(row), parseInt(col), 2);
     console.log(req.session.board);
 
@@ -222,8 +241,14 @@ app.post("/api/toggleLights", (req, res) => {
 });
 
 app.get("/api/getHint", (req, res) => {
+    console.log(req.session.level, req.session.hintGrid);
     // console.log("hint api is called successfully.");
-    res.json({ hintGrid:req.session.hintGrid });
+    if(req.session.matrixSize == 5 ) {
+        const resultMatrix = performMatrixOperations(req.session.hintGrid);
+        res.json({ hintGrid:resultMatrix });
+    } else {
+        res.json({hintGrid:req.session.hintGrid});
+    }
 })
 
 app.get("/api/getHint3", (req, res) => {
@@ -357,6 +382,54 @@ app.post("/api/toggle3Lights", (req, res) => {
     const gameEnded = req.session.board3.every(row => row.every(c => !c));
     // console.log(gameEnded);
 
+    if (req.isAuthenticated() && gameEnded) {
+        const { email } = req.user;
+        const {clickCount } = req.body; // Assuming level and clickCount are available from the request body
+    
+        // Check if data already exists for the email and level
+        db.query(
+            "SELECT moves, targetMoves FROM UserProgress3 WHERE email = $1 AND level = $2",
+            [email, req.session.level3]
+        )
+        .then(result => {
+            if (result.rows.length > 0) {
+                // Data exists for the email and level, check if current moves is less than stored moves
+                const storedMoves = result.rows[0].moves;
+                const storedTargetMoves = result.rows[0].targetMoves;
+    
+                if (clickCount < storedMoves) {
+                    // Update the existing record with the new moves if current moves is less
+                    db.query(
+                        "UPDATE UserProgress3 SET moves = $1 WHERE email = $2 AND level = $3",
+                        [clickCount, email, req.session.level3]
+                    )
+                    .then(() => {
+                        console.log(`Updated moves for level ${req.session.level3} and email ${email}`);
+                    })
+                    .catch(error => {
+                        console.error("Error updating moves:", error);
+                    });
+                }
+                // If current moves is not less than stored moves, do nothing (leave it as is)
+            } else {
+                // Data does not exist for the email and level, insert a new record
+                db.query(
+                    "INSERT INTO UserProgress3 (email, level, moves, targetMoves) VALUES ($1, $2, $3, $4)",
+                    [email, req.session.level3, clickCount, 2*req.session.level3]
+                )
+                .then(() => {
+                    console.log(`Inserted new progress for level ${req.session.level3} and email ${email}`);
+                })
+                .catch(error => {
+                    console.error("Error inserting progress:", error);
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error checking existing progress:", error);
+        });
+    }
+
     res.json({ board3:req.session.board3, gameEnded });
 });
 
@@ -393,7 +466,7 @@ app.post('/signup', (req, res) => {
         .then(result => {
             if (result.rows.length > 0) {
                 // User already exists, handle accordingly (e.g., show error message)
-                res.render("login.ejs", { page: 'login', userExists: 'true' });
+                res.render("login.ejs", { page: 'login', message: 'user already exists!' });
             } else {
                 // User does not exist, generate OTP and continue with signup process
                 const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
@@ -420,18 +493,19 @@ app.post('/signup', (req, res) => {
                 `
                 };
 
-                // Store email, OTP, and expiration time in temporary table OTP
-                db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime]);
-
+                
                 transporter.sendMail(mailOptions, (error, info) => {
                     if (error) {
                         console.error('Error sending OTP:', error);
-                        return res.status(500).send('Error sending OTP');
+                        res.render("login", { page: "OTP", message: "Error sending OTP"});
+                        // return res.status(500).send('Error sending OTP');
                     } else {
-                        console.log('Email sent:', info.response);
+                        // console.log('Email sent:', info.response);
                         const partial = hideEmailPhone(email);
-                        console.log(partial); // Output: e*****@example.com
-                        res.render("login", { page: "OTP", name: name, email: email, password: password, partialEmail: partial, wrongOTP: "false" });
+                        // console.log(partial); // Output: e*****@example.com
+                        // Store email, OTP, and expiration time in temporary table OTP
+                        db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime]);
+                        res.render("login", { page: "OTP", name: name, email: email, password: password, partialEmail: partial });
                     }
                 });
             }
@@ -514,11 +588,12 @@ app.post('/verifyOTP', async (req, res) => {
             });
         } else {
             // Wrong OTP handling (redirect or render login with error message)
-            res.render('login', { page: 'OTP', name, email, password, partialEmail: partial, wrongOTP: true });
+            res.render('login', { page: 'OTP', name, email, password, partialEmail: partial, message: "OTP entered is wrong! Try again." });
         }
     } catch (error) {
         console.error('Error fetching OTP:', error);
-        return res.status(500).send('Error fetching OTP');
+        // return res.status(500).send('Error fetching OTP');
+            res.render('login', { page: 'OTP', name, email, password, partialEmail: partial, message: "Error fetching OTP" });
     }
 });
 
@@ -566,9 +641,10 @@ app.post('/forgot-password', (req, res) => {
                         transporter.sendMail(mailOptions, (error, info) => {
                             if (error) {
                                 console.error('Error sending OTP:', error);
-                                return res.status(500).send('Error sending OTP');
+                                // return res.status(500).send('Error sending OTP');
+                                res.render("forgetPassword", { page: "enterEmail", email: email, message: "Error sending OTP! Try again." });
                             } else {
-                                console.log('Email sent:', info.response);
+                                // console.log('Email sent:', info.response);
                                 // Render the forgetPassword page with the page set to "enterOTP"
                                 res.render("forgetPassword", { page: "enterOTP", email: email });
                             }
@@ -576,13 +652,15 @@ app.post('/forgot-password', (req, res) => {
                     })
                     .catch(error => {
                         console.error('Error storing OTP in the database:', error);
-                        return res.status(500).send('Error storing OTP');
+                        // return res.status(500).send('Error storing OTP');
+                        res.render("forgetPassword", { page: "enterEmail", email: email, message: "Error storing OTP! Try again." });
                     });
             }
         })
         .catch(error => {
             console.error('Error checking user existence:', error);
-            return res.status(500).send('Error checking user existence');
+            // return res.status(500).send('Error checking user existence');
+            res.render("forgetPassword", { page: "enterEmail", email: email, message: "Error checking user existence! Try again." });
         });
 });
 
@@ -624,7 +702,8 @@ app.post('/enter-otp', (req, res) => {
         })
         .catch(error => {
             console.error('Error fetching OTP:', error);
-            return res.status(500).send('Error fetching OTP');
+            // return res.status(500).send('Error fetching OTP');
+            res.render("forgetPassword", { page: "enterOTP", message: "Error fetching OTP! Try again.", email: email });
         });
 });
 
@@ -668,7 +747,8 @@ app.post("/resend-otp", (req, res) => {
                                 transporter.sendMail(mailOptions, (error, info) => {
                                     if (error) {
                                         console.error('Error sending OTP:', error);
-                                        return res.status(500).send('Error sending OTP');
+                                        // return res.status(500).send('Error sending OTP');
+                                        res.render("forgetPassword", { page: "enterEmail", message: "Error sending OTP! Try again." });
                                     } else {
                                         console.log('Email sent:', info.response);
                                         // res.send('OTP has been resent successfully');
@@ -678,7 +758,9 @@ app.post("/resend-otp", (req, res) => {
                             })
                             .catch(error => {
                                 console.error('Error storing new OTP:', error);
-                                return res.status(500).send('Error storing new OTP');
+
+                                // return res.status(500).send('Error storing new OTP');
+                                res.render("forgetPassword", { page: "enterEmail", message: "Error storing new OTP! Try again." });
                             });
                     })
                     .catch(error => {
@@ -782,34 +864,36 @@ app.post('/edit-profile', (req, res) => {
 
 // Define Passport Local Strategy
 passport.use('local', new Strategy({
-    usernameField: 'email', // Assuming 'email' is the field name for username
-    passwordField: 'password' // Assuming 'password' is the field name for password
-}, async (email, password, cb) => {
-    // Your authentication logic here
+    usernameField: 'email',
+    passwordField: 'password',
+    passReqToCallback: true // Allow passing req to the callback
+}, async (req, email, password, cb) => {
     try {
-        // Query the database to find user by email
         const result = await db.query('SELECT * FROM Users WHERE email = $1', [email]);
         if (result.rows.length > 0) {
             const user = result.rows[0];
             const storedHashedPassword = user.password;
 
-            // Compare passwords
             bcrypt.compare(password, storedHashedPassword, (err, valid) => {
                 if (err) {
-                    return cb(err);
+                    return cb(err); // Return error to the callback
                 } else {
                     if (valid) {
-                        return cb(null, user);
+                        return cb(null, user); // Return user to indicate successful authentication
                     } else {
-                        return cb(null, false, { message: 'Incorrect password' });
+                        req.flash('error', 'Incorrect password');
+                        // console.log("password is incorrect.");
+                        // console.log("password is: ",req.flash('error')[0]);
+                        return cb(null, false); // Indicate failed authentication
                     }
                 }
             });
         } else {
-            return cb(null, false, { message: 'User not found' });
+            req.flash('error', 'User not found');
+            return cb(null, false); // Indicate failed authentication
         }
     } catch (err) {
-        return cb(err);
+        return cb(err); // Return error to the callback
     }
 }));
 
@@ -836,7 +920,7 @@ passport.deserializeUser(async (email, cb) => {
 app.post('/login', passport.authenticate('local', {
     successRedirect: '/userProfile',
     failureRedirect: '/login',
-    // failureFlash: true // Enable flash messages for failure redirects
+    failureFlash: true // Enable flash messages for failure redirects
 }));
 
 // Logout route
@@ -853,3 +937,78 @@ app.get("/logout", (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
+
+
+function performMatrixOperations(matrix01) {
+  const matrix02 = [
+    [0, 1, 1, 1, 0],
+    [1, 0, 1, 0, 1],
+    [1, 1, 0, 1, 1],
+    [1, 0, 1, 0, 1],
+    [0, 1, 1, 1, 0],
+  ];
+
+  const matrix03 = [
+    [1, 0, 1, 0, 1],
+    [1, 0, 1, 0, 1],
+    [0, 0, 0, 0, 0],
+    [1, 0, 1, 0, 1],
+    [1, 0, 1, 0, 1],
+  ];
+
+  const matrix1 = matrix(matrix01);
+
+  const resultMatrix1 = add(matrix1, matrix(matrix02));
+  const resultMatrix2 = add(matrix1, matrix(matrix03));
+  const resultMatrix3 = add(matrix1, matrix(matrix02), matrix(matrix03));
+
+  const modifiedResult1 = resultMatrix1.toArray().map(row => row.map(value => value % 2));
+  const modifiedResult2 = resultMatrix2.toArray().map(row => row.map(value => value % 2));
+  const modifiedResult3 = resultMatrix3.toArray().map(row => row.map(value => value % 2));
+
+  const countOnesMatrix01 = countOnesInArray(matrix01);
+  const countOnesResult1 = countOnesInArray(modifiedResult1);
+  const countOnesResult2 = countOnesInArray(modifiedResult2);
+  const countOnesResult3 = countOnesInArray(modifiedResult3);
+
+  const leastOnesCount = Math.min(countOnesMatrix01, countOnesResult1, countOnesResult2, countOnesResult3);
+
+  if (countOnesMatrix01 === leastOnesCount) {
+    return matrix01;
+  } else if (countOnesResult1 === leastOnesCount) {
+    return modifiedResult1;
+  } else if (countOnesResult2 === leastOnesCount) {
+    return modifiedResult2;
+  } else {
+    return modifiedResult3;
+  }
+}
+
+function countOnesInArray(array) {
+  let count = 0;
+
+  for (let i = 0; i < array.length; i++) {
+    for (let j = 0; j < array[i].length; j++) {
+      if (array[i][j] === 1) {
+        count++;
+      }
+    }
+  }
+
+  return count;
+}
+
+// Example usage:
+const matrix01 = [
+  [1, 0, 0, 0, 0],
+  [0, 0, 0, 1, 0],
+  [0, 1, 0, 0, 0],
+  [0, 0, 0, 0, 1],
+  [1, 0, 1, 0, 0],
+];
+
+
+
+// console.log("Matrix with the least number of '1's:");
+// console.log(resultMatrix);
