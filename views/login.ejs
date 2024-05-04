@@ -6,203 +6,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet"> <!-- Include Poppins font -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> <!-- Include Font Awesome for icons -->
-    <link rel="stylesheet" href="/styles/style.css"> <!-- Include your CSS file here -->
+    <link rel="stylesheet" href="/styles/style.css"> <!-- Update the path to your CSS file -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> <!-- Include Tailwind CSS -->
     <link rel="icon" href="/photos/lights_out_icon.jpeg" type="image/jpeg">
-
-    <style>
-        /* Add your custom styles here */
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        header {
-            width: 100%;
-            background-color: #fa32a0; /* Light pink background color */
-            padding: 20px 0;
-            text-align: center;
-            color: #fff; /* White text color */
-            font-size: 24px;
-            font-weight: 700;
-            text-transform: uppercase;
-            border-bottom: 2px solid #ff7eb9; /* Dark pink border bottom */
-        }
-
-        .form-container {
-            background-color: #fff;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 500px;
-            width: 100%;
-            position: relative;
-            overflow: hidden;
-            margin-top: 20px;
-        }
-
-        .form-container:before {
-            content: '';
-            position: absolute;
-            top: -20px;
-            left: -20px;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(to bottom right, #2ecc71, #27ae60);
-            z-index: -1;
-            border-radius: 0 0 50% 50%;
-            transition: all 0.4s ease;
-        }
-
-        h2 {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 36px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        h3 {
-            margin-bottom: 20px;
-            color: #555;
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
-            width: calc(100% - 32px);
-            padding: 16px;
-            margin-bottom: 20px;
-            border: none;
-            border-radius: 8px;
-            box-sizing: border-box;
-            background-color: #f5f5f5;
-            font-family: 'Poppins', sans-serif;
-            transition: all 0.3s ease;
-        }
-
-        input[type="submit"] {
-            width: calc(100% - 32px);
-            background-color: #2ecc71;
-            color: white;
-            padding: 16px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        input[type="submit"]:hover {
-            background-color: #27ae60;
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
-        }
-
-        .forgot-password {
-            font-size: 14px;
-            margin-top: 10px;
-            color: #555;
-            text-decoration: none;
-        }
-
-        .forgot-password:hover {
-            text-decoration: underline;
-        }
-
-        p {
-            margin-top: 20px;
-            color: #666;
-        }
-
-        a {
-            color: #2ecc71;
-            text-decoration: none;
-            font-weight: 700;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .home-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: #fa32a0; /* Light pink background color */
-            border: none;
-            font-size: 20px;
-            color: #fff; /* White text color */
-            cursor: pointer;
-            padding: 10px 20px; /* Added padding to make button visible */
-            border-radius: 8px; /* Added border-radius for rounded corners */
-            text-transform: uppercase; /* Uppercase text */
-        }
-
-        .home-button:hover {
-            text-decoration: underline;
-        }
-    </style>
     <title>Login or Sign Up</title>
 </head>
 
-<body>
-    <header>
-        Lights Out
-    </header>
-    <button class="home-button" onclick="window.location.href='/';">Home</button>
-    <div class="form-container">
-        <h2>Welcome to Lights Out</h2>
-        <% if (page === 'login') { %>
-            <h3>Login</h3>
-            <% if(locals.userExists=='true')  {%> 
-                <p id="userExists" class="text-green-500">User already exists!</p>
+<body class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-poppins">
+    <%- include('partials/header') %>
+    <div class="flex justify-center items-center h-screen">
+        <div class="form-container bg-white shadow-lg rounded-lg p-10 max-w-md mx-auto">
+            <h2 class="text-4xl font-semibold mb-8 text-center text-gray-800">Welcome to Lights Out</h2>
+            <% if (page === 'login') { %>
+                <h3 class="text-2xl font-semibold mb-6 text-center text-gray-700">Login</h3>
+                <% if(locals.message)  {%> 
+                    <p id="userExists" class="text-pink-500 text-sm mb-6">
+                        <%=locals.message %>
+                    </p>
                 <% } %>
-            <form action="/login" method="post">
-                <input type="email" name="email" placeholder="Email" required><br>
-                <input type="password" name="password" placeholder="Password" required><br>
-                <input type="submit" value="Login">
-                <a class="forgot-password" href="/forgot-password">Forgot Password?</a>
-            </form>
-            <p>Don't have an account? <a href="/signup">Sign up</a></p>
-        <% } else if (page === 'signup') { %>
-            <h3>Sign Up</h3>
-            <% if(locals.userExists=="false")  {%>
-                <p id = "userExists" class="text-red-600">User do not exist! Sign up first</p>
+                <form action="/login" method="post">
+                    <input type="email" name="email" placeholder="Email" required class="w-full px-4 py-3 rounded-lg mb-4 bg-gray-100 focus:outline-none focus:bg-white border-2 border-gray-300"><br>
+                    <input type="password" name="password" placeholder="Password" required class="w-full px-4 py-3 rounded-lg mb-4 bg-gray-100 focus:outline-none focus:bg-white border-2 border-gray-300"><br>
+                    <input type="submit" value="Login" class="w-full bg-green-500 text-white font-semibold px-6 py-3 rounded-lg mb-6 hover:bg-green-600 transition duration-200">
+                    <div class="text-center">
+                        <a class="forgot-password text-sm text-gray-600 hover:text-green-500" href="/forgot-password">Forgot Password?</a>
+                    </div>
+                </form>
+                <p class="text-gray-700 text-center">Don't have an account? <a href="/signup" class="text-green-500 font-semibold">Sign up</a></p>
+            <% } else if (page === 'signup') { %>
+                <h3 class="text-2xl font-semibold mb-6 text-center text-gray-700">Sign Up</h3>
+                <% if(locals.userExists=="false")  {%>
+                    <p id = "userExists" class="text-red-600 text-sm mb-6">User does not exist! Sign up first</p>
                 <% } %>
-            <form action="/signup" method="post">
-                <input type="text" name="name" placeholder="Name" required><br>
-                <input type="email" name="email" placeholder="Email" required><br>
-                <input type="password" name="password" placeholder="Password" required><br>
-                <input type="submit" value="Sign Up">
-            </form>
-            <p>Already have an account? <a href="/login">Login</a></p>
-        
-        <% } else if (page === 'OTP') { %>
-            <h3>Sign Up</h3>
-            <h4>Verify OTP for <%= partialEmail %></h4>
-            <% if(wrongOTP=="true")  {%>
-            <p id = "wrongOTP" class="text-red-600">OTP entered is wrong! Try again.</p>
+                <form action="/signup" method="post">
+                    <input type="text" name="name" placeholder="Name" required class="w-full px-4 py-3 rounded-lg mb-4 bg-gray-100 focus:outline-none focus:bg-white border-2 border-gray-300"><br>
+                    <input type="email" name="email" placeholder="Email" required class="w-full px-4 py-3 rounded-lg mb-4 bg-gray-100 focus:outline-none focus:bg-white border-2 border-gray-300"><br>
+                    <input type="password" name="password" placeholder="Password" required class="w-full px-4 py-3 rounded-lg mb-4 bg-gray-100 focus:outline-none focus:bg-white border-2 border-gray-300"><br>
+                    <input type="submit" value="Sign Up" class="w-full bg-green-500 text-white font-semibold px-6 py-3 rounded-lg mb-6 hover:bg-green-600 transition duration-200">
+                </form>
+                <p class="text-gray-700 text-center">Already have an account? <a href="/login" class="text-green-500 font-semibold">Login</a></p>
+            
+            <% } else if (page === 'OTP') { %>
+                <h3 class="text-2xl font-semibold mb-6 text-center text-gray-700">Sign Up</h3>
+                <h4 class="text-xl font-semibold mb-4 text-center text-gray-800">Verify OTP for <%= partialEmail %></h4>
+                <% if(locals.message)  {%>
+                    <p id = "wrongOTP" class="text-red-600 text-sm mb-6">
+                        <%=message %>
+                    </p>
+                <% } %>
+                <form action="/verifyOTP" method="post">
+                    <input type="hidden" name="email" value="<%= email %>"> <!-- Assuming you pass the email as a variable -->
+                    <input type="hidden" name="name" value="<%= name %>"> <!-- Assuming you pass the email as a variable -->
+                    <input type="hidden" name="password" value="<%= password %>"> <!-- Assuming you pass the email as a variable -->
+                    <input type="text" name="enteredOTP" placeholder="OTP" required class="w-full px-4 py-3 rounded-lg mb-4 bg-gray-100 focus:outline-none focus:bg-white border-2 border-gray-300"><br>
+                    <input type="submit" value="Verify OTP" class="w-full bg-green-500 text-white font-semibold px-6 py-3 rounded-lg mb-6 hover:bg-green-600 transition duration-200">
+                </form>
+                <p class="text-gray-700 text-center">Already have an account? <a href="/login" class="text-green-500 font-semibold">Login</a></p>
             <% } %>
-            <form action="/verifyOTP" method="post">
-                <input type="hidden" name="email" value="<%= email %>"> <!-- Assuming you pass the email as a variable -->
-                <input type="hidden" name="name" value="<%= name %>"> <!-- Assuming you pass the email as a variable -->
-                <input type="hidden" name="password" value="<%= password %>"> <!-- Assuming you pass the email as a variable -->
-                <input type="text" name="enteredOTP" placeholder="OTP" required><br>
-                <input type="submit" value="Verify OTP">
-            </form>
-            <p>Already have an account? <a href="/login">Login</a></p>
-        <% } %>
-
+        </div>
     </div>
+     <%- include('partials/footer') %> 
 </body>
 <script>
     setTimeout(() => {

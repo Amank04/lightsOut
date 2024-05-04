@@ -1,150 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/styles/style.css">
     <link rel="icon" href="/photos/lights_out_icon.jpeg" type="image/jpeg">
-
-    <style>
-        /* Add your custom styles here */
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        header {
-            width: 100%;
-            background-color: #fa32a0;
-            padding: 20px 0;
-            text-align: center;
-            color: #fff;
-            font-size: 24px;
-            font-weight: 700;
-            text-transform: uppercase;
-            border-bottom: 2px solid #ff7eb9;
-        }
-
-        .profile-container {
-            background-color: #fff;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 800px;
-            width: 100%;
-            position: relative;
-            overflow: hidden;
-            margin-top: 20px;
-        }
-
-        .profile-details {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 24px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .profile-table {
-            width: 100%;
-            margin-bottom: 20px;
-            border-collapse: collapse;
-        }
-
-        .profile-table th,
-        .profile-table td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .profile-table th {
-            background-color: #f2f2f2;
-        }
-
-        .profile-info {
-            color: #555;
-            font-size: 18px;
-            font-weight: 400;
-        }
-
-        .profile-info span {
-            color: #2ecc71;
-            font-weight: 700;
-        }
-
-        .edit-profile {
-            background-color: #2ecc71;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            font-weight: 700;
-            font-size: 16px;
-            text-decoration: none;
-        }
-
-        .edit-profile:hover {
-            background-color: #27ae60;
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
-        }
-
-        .home-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: #fa32a0;
-            border: none;
-            font-size: 20px;
-            color: #fff;
-            cursor: pointer;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-transform: uppercase;
-        }
-
-        .home-button:hover {
-            text-decoration: underline;
-        }
-    </style>
     <title>User Profile</title>
 </head>
+
 <body>
-    <header>
-        Lights Out
-    </header>
-    <button class="home-button" onclick="window.location.href='/';">Home</button>
-    <div class="profile-container">
-        <h2>Welcome <span id="username"><%= name %></span>!</h2>
-        <div class="profile-details">
-            <table class="profile-table">
-                <tr>
-                    <th>Level</th>
-                    <th>Moves</th>
-                    <th>Target Moves</th>
-                </tr>
-                <% progress.sort((a, b) => a.level - b.level).forEach(item => { %>
-                    <tr>
-                        <td><%= item.level %></td>
-                        <td><%= item.moves %></td>
-                        <td><%= item.targetmoves %></td>
-                    </tr>
-                <% }); %>
-            </table>
-        </div>
-        <a href="/edit-profile" class="edit-profile">Edit Profile</a>
-    </div>
-</body>
+    <%- include('partials/header') %> 
+    <div class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-poppins min-h-screen flex flex-col items-center">
+        <div class="profile-container bg-white p-8 rounded-lg shadow-md text-center w-full max-w-screen-md mt-8">
+        <h2 class="text-4xl font-bold mb-4">Welcome <span id="username" class="text-pink-500"><%= name %></span>!</h2>
+        
+        <!-- Overall Accuracy Section -->
+        <div class="bg-gray-200 rounded-lg p-6 mb-8">
+            <h3 class="text-xl font-bold mb-4">Overall Accuracy</h3>
+            <div class="text-4xl font-bold text-pink-500">
+                <% if (overallAccuracy >= 80) { %>
+                    <i class="fas fa-thumbs-up text-green-500"></i>
+                    <% } else { %>
+                        <i class="fas fa-thumbs-down text-red-500"></i>
+                        <% } %>
+                        <%= overallAccuracy %>%
+                    </div>
+                </div>
+                
+                <!-- Table for 2-state Accuracy -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-2">Accuracy for 2-State</h3>
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-4 py-2 text-center">Level</th>
+                                <th class="px-4 py-2 text-center">Accuracy Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% progress2State.sort((a, b) => a.level - b.level).forEach(item => { %>
+                                <tr>
+                                    <td class="px-4 py-2 align-middle text-center"><%= item.level %></td>
+                                    <td class="px-4 py-2 flex items-center justify-center">
+                                        <% if (item.targetmoves !== 0) { %>
+                                            <%= ((item.targetmoves / item.moves) * 100).toFixed(2) %>%
+                                <% } else { %>
+                                    0%
+                                    <% } %>
+                                </td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Table for 3-state Accuracy -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-2">Accuracy for 3-State</h3>
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-4 py-2 text-center">Level</th>
+                                <th class="px-4 py-2 text-center">Accuracy Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% progress3State.sort((a, b) => a.level - b.level).forEach(item => { %>
+                                <tr>
+                                    <td class="px-4 py-2 align-middle text-center"><%= item.level %></td>
+                                    <td class="px-4 py-2 flex items-center justify-center">
+                                        <% if (item.targetmoves !== 0) { %>
+                                            <%= ((item.targetmoves / item.moves) * 100).toFixed(2) %>%
+                                            <% } else { %>
+                                                0%
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <a href="/edit-profile" class="w-full bg-green-500 text-white font-semibold px-6 py-3 rounded-full mb-4 hover:bg-green-600 transition duration-300">Edit Profile</a>
+                        </div>
+                    </div>
+                    <%- include('partials/footer') %>
+                    </body>
+
 </html>
