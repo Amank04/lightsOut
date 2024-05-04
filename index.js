@@ -814,26 +814,58 @@ app.post('/reset-password', (req, res) => {
 
 app.get("/userProfile", (req, res) => {
     if (req.isAuthenticated()) {
-        // Fetch user progress data from the database
-        const userEmail = req.user.email; // Assuming you have the user's email in the req.user object
-        const query = {
+        const userEmail = req.user.email;
+
+        // Fetch user progress data for 2-state
+        const query2State = {
             text: 'SELECT level, moves, targetmoves FROM userprogress WHERE email = $1',
             values: [userEmail]
         };
 
-        db.query(query)
-            .then(result => {
-                const progress = result.rows;
+        // Fetch user progress data for 3-state
+        const query3State = {
+            text: 'SELECT level, moves, targetmoves FROM userprogress3 WHERE email = $1',
+            values: [userEmail]
+        };
+        const fetchProgress = async () => {
+            try {
+                const result2State = await db.query(query2State);
+                const result3State = await db.query(query3State);
+                
+                const progress2State = result2State.rows;
+                const progress3State = result3State.rows;
+
+                // console.log("Progress 2-State:", progress2State);
+                // console.log("Progress 3-State:", progress3State);
+
+                // Calculate overall accuracy across all levels
+            const allProgress = [...progress2State, ...progress3State];
+            const totalLevels = allProgress.length;
+            let totalTargetMoves = 0;
+            let totalMoves = 0;
+
+            allProgress.forEach(item => {
+                totalTargetMoves += item.targetmoves;
+                totalMoves += item.moves;
+            });
+
+            const overallAccuracy = totalMoves > 0 ? ((totalTargetMoves / totalMoves) * 100).toFixed(2) : 0;
+
+
                 res.render("userProfile", {
                     name: req.user.name,
                     email: req.user.email,
-                    progress: progress
+                    progress2State: progress2State,
+                    progress3State: progress3State,
+                    overallAccuracy:overallAccuracy
                 });
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error("Error fetching user progress:", err);
                 res.status(500).send("Internal Server Error");
-            });
+            }
+        };
+
+        fetchProgress();
     } else {
         res.redirect("/login");
     }
