@@ -6,6 +6,7 @@ import otpGenerator from 'otp-generator';
 import hideEmailPhone from 'partially-hide-email-phone';
 import pg from "pg";
 import bcrypt from 'bcrypt';
+import multer from "multer";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 // import flash from "express-flash";
@@ -45,6 +46,9 @@ app.use(flash());
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Multer setup for file uploads (profile image)
+const upload = multer({ dest: 'public/uploads/' });
 
 const db = new pg.Client({
     user: process.env.DB_USER,
@@ -128,7 +132,7 @@ app.get("/", (req, res) => {
     // console.log("Game board:", board);
     // console.log("Hint board: ", hintGrid);
     if (req.isAuthenticated()) {
-        res.render("index.ejs", { board, level:req.session.level, matrixSize:req.session.matrixSize, name: req.user.name });
+        res.render("index.ejs", { board, level:req.session.level, matrixSize:req.session.matrixSize, name: req.user.name, profileImage: req.user.profile_image });
         // res.render("submit.ejs");
     } else {
         // res.redirect("/login");
@@ -159,7 +163,13 @@ app.get('/signup', (req, res) => {
 });
 
 app.get("/team", (req, res) => {
-    res.render("team.ejs");
+    if(req.isAuthenticated()) {
+
+        res.render("team.ejs", {name:req.user.name, profileImage: req.user.profile_image });
+    } else {
+
+        res.render("team.ejs", {name:"Login" });
+    }
 })
 
 app.get('/levels', (req, res) => {
@@ -342,7 +352,7 @@ app.get("/state3", (req, res) => {
     // console.log({ board3 });
     // console.log(board3.length, board3[0].length)
     if (req.isAuthenticated()) {
-        res.render("3state.ejs", { board:req.session.board3, level:req.session.level3, matrixSize:req.session.matrixSize3, name: req.user.name });
+        res.render("3state.ejs", { board:req.session.board3, level:req.session.level3, matrixSize:req.session.matrixSize3, name: req.user.name, profileImage:req.user.profile_image });
         // res.render("submit.ejs");
     } else {
         // res.redirect("/login");
@@ -818,6 +828,12 @@ app.get("/userProfile", (req, res) => {
     if (req.isAuthenticated()) {
         const userEmail = req.user.email;
 
+        // Fetch user profile data
+        const queryUserProfile = {
+            text: 'SELECT name, email, profile_image, id FROM public.users WHERE email = $1',
+            values: [userEmail]
+        };
+
         // Fetch user progress data for 2-state
         const query2State = {
             text: 'SELECT level, moves, targetmoves FROM userprogress WHERE email = $1',
@@ -829,49 +845,135 @@ app.get("/userProfile", (req, res) => {
             text: 'SELECT level, moves, targetmoves FROM userprogress3 WHERE email = $1',
             values: [userEmail]
         };
-        const fetchProgress = async () => {
+
+        const fetchUserData = async () => {
             try {
+                const resultUserProfile = await db.query(queryUserProfile);
                 const result2State = await db.query(query2State);
                 const result3State = await db.query(query3State);
-                
+
+                const userProfile = resultUserProfile.rows[0];
+                console.log(userProfile);
                 const progress2State = result2State.rows;
                 const progress3State = result3State.rows;
 
-                // console.log("Progress 2-State:", progress2State);
-                // console.log("Progress 3-State:", progress3State);
-
                 // Calculate overall accuracy across all levels
-            const allProgress = [...progress2State, ...progress3State];
-            const totalLevels = allProgress.length;
-            let totalTargetMoves = 0;
-            let totalMoves = 0;
+                const allProgress = [...progress2State, ...progress3State];
+                const totalLevels = allProgress.length;
+                let totalTargetMoves = 0;
+                let totalMoves = 0;
 
-            allProgress.forEach(item => {
-                totalTargetMoves += item.targetmoves;
-                totalMoves += item.moves;
-            });
+                allProgress.forEach(item => {
+                    totalTargetMoves += item.targetmoves;
+                    totalMoves += item.moves;
+                });
 
-            const overallAccuracy = totalMoves > 0 ? ((totalTargetMoves / totalMoves) * 100).toFixed(2) : 0;
-
-
+                const overallAccuracy = totalMoves > 0 ? ((totalTargetMoves / totalMoves) * 100).toFixed(2) : 0;
+console.log(userProfile.profile_image);
                 res.render("userProfile", {
-                    name: req.user.name,
-                    email: req.user.email,
+                    name: userProfile.name,
+                    email: userProfile.email,
+                    profileImage: userProfile.profile_image,
                     progress2State: progress2State,
+                    userID: userProfile.id,
                     progress3State: progress3State,
-                    overallAccuracy:overallAccuracy
+                    overallAccuracy: overallAccuracy
                 });
             } catch (err) {
-                console.error("Error fetching user progress:", err);
+                console.error("Error fetching user data:", err);
                 res.status(500).send("Internal Server Error");
             }
         };
 
-        fetchProgress();
+        fetchUserData();
     } else {
         res.redirect("/login");
     }
 });
+
+app.get("/edit-profile", (req,res)=> {
+
+    // console.log(req.user);
+    if(req.isAuthenticated()) {
+
+        res.render("edit-profile",{name: req.user.name, email: req.user.email, id:req.user.id, profileImage: req.user.profile_image});
+    } else {
+
+        res.render("login",{name:"Login",page:"login"});
+    }
+})
+
+app.post('/update-profile-picture/:id', upload.single('profileImage'), async (req, res) => {
+    const userID = req.params.id;
+    const profileImage = req.file ? req.file.filename : null;
+    console.log("update profile picture");
+
+    try {
+        // Update profile picture in the Users table
+        const query = `
+            UPDATE public.users
+            SET profile_image = $1
+            WHERE id = $2
+            RETURNING *;
+        `;
+        
+        const result = await db.query(query, [profileImage, userID]);
+
+        if (result.rows.length > 0) {
+            // Profile picture updated successfully
+            res.redirect("/userProfile");
+        } else {
+            // User not found
+            res.status(404).json({ error: 'User not found' });
+        }
+    } catch (error) {
+        console.error('Error updating profile picture:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+app.post('/update-profile/:id', upload.single('profileImage'), async (req, res) => {
+    const userID = req.params.id;
+    const { name, email, password } = req.body;
+    console.log(password.length);
+
+    try {
+        // Construct the SQL query to update user's profile
+        let query;
+        let queryValues;
+
+        if (password.length>0) {
+            // Update profile including password
+            query = `
+                UPDATE public.users
+                SET name = $1, email = $2, password = $3
+                WHERE id = $4
+                RETURNING *;
+            `;
+            queryValues = [name, email, password, userID];
+        } else {
+            // Update profile excluding password
+            query = `
+                UPDATE public.users
+                SET name = $1, email = $2
+                WHERE id = $3
+                RETURNING *;
+            `;
+            queryValues = [name, email, userID];
+        }
+        
+        // Execute the SQL query with parameters
+        const result = await db.query(query, queryValues);
+
+        // Send back the updated user data
+        res.json({ message: 'Profile updated successfully', user: result.rows[0] });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 
 // Add route to handle profile updates
@@ -1033,14 +1135,6 @@ function countOnesInArray(array) {
   return count;
 }
 
-// Example usage:
-const matrix01 = [
-  [1, 0, 0, 0, 0],
-  [0, 0, 0, 1, 0],
-  [0, 1, 0, 0, 0],
-  [0, 0, 0, 0, 1],
-  [1, 0, 1, 0, 0],
-];
 
 
 
