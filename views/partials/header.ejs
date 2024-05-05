@@ -1,82 +1,74 @@
-<style>
-   /* Add this CSS style in your HTML or external CSS file */
-/* Updated CSS for the dropdown menu to make it look more premium */
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    top: calc(100% + 8px); /* Adjust the spacing between button and dropdown */
-    right: 0;
-    background-color: #ffffff; /* White background */
-    border: 1px solid #d2d6dc; /* Light gray border */
-    border-radius: 8px; /* Rounded corners */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Soft shadow */
-    z-index: 999; /* Ensure dropdown stays on top */
-    padding: 8px 0;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lights Out Game</title>
+    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
+    <link rel="stylesheet" href="/styles/style.css"> <!-- Update the path to your CSS file -->
+    <style>
+        /* Additional CSS styles */
+    </style>
+</head>
+<body>
 
-.dropdown-menu a {
-    display: block;
-    padding: 12px 24px; /* Padding for each item */
-    color: #4b5563; /* Text color */
-    font-size: 16px; /* Font size */
-    text-decoration: none;
-    transition: background-color 0.3s ease; /* Smooth transition */
-    border-radius: 8px; /* Rounded corners for items */
-    font-weight: 500; /* Bold font weight */
-}
+<header class="sticky bg-pink-500 text-white text-center py-2 flex justify-between">
+    <!-- Heading -->
+    <div class="heading flex-grow flex flex-col justify-center">
+        <h1 class="text-2xl font-bold">Lights Out Game</h1>
+        <p class="text-sm">Turn off all the lights to win!</p>
+    </div>
 
-.dropdown-menu a:hover {
-    background-color: #edf2f7; /* Light gray background on hover */
-    color: #1a202c; /* Darker text color on hover */
-}
+    <!-- Login Link with Dropdown -->
+    <div class="relative right-4">
+        <button id="loginButton" class="login-button flex items-center justify-center text-white text-sm mt-2 relative">
+          <% if(locals.profileImage) { %>
+            <img src="/uploads/<%= profileImage %>" alt="Login" class="w-9 h-9 rounded-full mr-1" width="24" height="24">
 
+          <% } else { %>
+            <img src="https://static-assets-web.flixcart.com/batman-returns/batman-returns/p/images/profile-52e0dc.svg" alt="Login" class="w-9 h-9 rounded-full mr-1" width="24" height="24">
 
-  </style>
-  
-  <script>
-    // Add this JavaScript code in your HTML file
-    document.addEventListener("DOMContentLoaded", function() {
-      const loginButton = document.querySelector(".login-button");
-      const dropdownMenu = document.querySelector(".dropdown-menu");
-  
-      loginButton.addEventListener("mouseenter", function() {
-        dropdownMenu.style.display = "block";
-      });
-  
-      dropdownMenu.addEventListener("mouseleave", function() {
-        dropdownMenu.style.display = "none";
-      });
-    });
-  </script>
-  
-  <header class="sticky bg-pink-500 text-white text-center py-2 flex justify-between">
-      <!-- Heading -->
-      <div class="heading flex-grow flex flex-col justify-center">
-          <h1 class="text-2xl font-bold">Lights Out Game</h1>
-          <p class="text-sm">Turn off all the lights to win!</p>
-      </div>
-  
-      <!-- Login Link with Dropdown -->
-      <div class="relative right-4">
-          <a href="#" title="Login" class="login-button flex items-center justify-center text-white text-sm mt-2 relative">
-              <img src="https://static-assets-web.flixcart.com/batman-returns/batman-returns/p/images/profile-52e0dc.svg" alt="Login" class="w-9 h-9 rounded-full mr-1" width="24" height="24">
-              <span>
-                <%=name %>
-              </span>
-          </a>
-          <!-- Dropdown menu -->
-          <div class="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-md shadow-md dropdown-menu">
-            <a href="#" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Settings</a>
-            <a href="/login" title="login" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">
-              <%let display=locals.name=="Login" ? "Login":"Profile" %>
-              <%=display %>
+         <% } %>
+            <span><%= name %></span>
+        </button>
+        <!-- Dropdown menu -->
+        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-md z-10">
+            <a href="/" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Home</a>
+            <a href="/login" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">
+                <% let display = (name === "Login") ? "Login" : "Profile"; %>
+                <%= display %>
             </a>
-            <% if (locals.name!= "Login") { %>
-              <a href="/logout" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Logout</a>
-              <% } else { %>
-
-           <% } %>
+            <% if (name !== "Login") { %>
+                <a href="/logout" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Logout</a>
+            <% } %>
         </div>
-      </div>
-  </header>
-  
+    </div>
+</header>
+
+<script>
+    // JavaScript to handle dropdown functionality
+    document.addEventListener("DOMContentLoaded", function() {
+        const loginButton = document.getElementById("loginButton");
+        const dropdownMenu = document.getElementById("dropdownMenu");
+
+        // Toggle dropdown menu visibility on login button click
+        loginButton.addEventListener("click", function(event) {
+            event.stopPropagation(); // Prevent dropdown from closing immediately
+            dropdownMenu.classList.toggle("hidden"); // Toggle visibility
+        });
+
+        // Close dropdown menu when clicking anywhere outside of it
+        document.addEventListener("click", function(event) {
+            const target = event.target;
+            const isDropdownClicked = dropdownMenu.contains(target); // Check if clicked inside dropdown
+            const isLoginButtonClicked = (target === loginButton);
+
+            if (!isDropdownClicked && !isLoginButtonClicked) {
+                dropdownMenu.classList.add("hidden"); // Hide dropdown if clicked outside
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
