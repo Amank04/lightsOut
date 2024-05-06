@@ -15,41 +15,53 @@
 <body>
     <%-include('partials/header') %>
     <div class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-poppins min-h-screen">
-    <div class="flex flex-col items-center">
-        <div class="profile-container bg-white p-8 rounded-lg shadow-md text-center w-full max-w-screen-md mt-8">
-            <h2 class="text-4xl font-bold mb-8 text-purple-800">Leaderboard</h2>
+        <div class="flex flex-col items-center">
+            <div class="profile-container bg-white p-8 rounded-lg shadow-md text-center w-full max-w-screen-md mt-8">
+                <h2 class="text-4xl font-bold mb-8 text-purple-800">Leaderboard</h2>
 
-            <!-- Leaderboard Table -->
-            <div class="overflow-x-auto">
-                <table class="w-full table-auto mb-8">
-                    <thead>
-                        <tr class="bg-gray-200">
-                            <th class="px-6 py-3 text-center">Name</th>
-                            <th class="px-6 py-3 text-center">Accuracy (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% topPlayers.forEach((player, index) => { %>
-                            <tr class="<%= index % 2 === 0 ? 'bg-gray-100' : '' %>">
-                                <td class="px-6 py-4 whitespace-nowrap"><%= player.name %></td>
-                                <td class="px-6 py-4 whitespace-nowrap"><%= (Number(player.accuracy)).toFixed(2) %>%</td>
+                <!-- Leaderboard Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full table-auto mb-8">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="px-6 py-3 text-center">Profile Image</th>
+                                <th class="px-6 py-3 text-center">Name</th>
+                                <th class="px-6 py-3 text-center">Accuracy (%)</th>
                             </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            <% topPlayers.forEach((player, index) => { %>
+                                <tr class="<%= index % 2 === 0 ? 'bg-gray-100' : '' %>">
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <% if (player.profile_image) { %>
+                                            <!-- Display profile image if available -->
+                                            <img src="data:image/jpeg;base64,<%= Buffer.from(player.profile_image).toString('base64') %>" alt="User's Profile" class="rounded-full h-12 w-12 mx-auto mb-1" width="48" height="48">
+                                        <% } else { %>
+                                            <!-- Display default profile image if no image available -->
+                                            <img src="https://static-assets-web.flixcart.com/batman-returns/batman-returns/p/images/profile-52e0dc.svg" alt="User's Profile" class="rounded-full h-12 w-12 mx-auto mb-1" width="48" height="48">
+                                        <% } %>
+                                    </td>
+                                    
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><%= player.name %></td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><%= (Number(player.accuracy)).toFixed(2) %>%</td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- Buttons -->
-            <div class="grid grid-cols-2 gap-4">
-                <!-- Home Button -->
-                <a href="/" class="bg-green-500 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-600 transition duration-300">Home</a>
+                <!-- Buttons -->
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Home Button -->
+                    <a href="/" class="bg-green-500 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-600 transition duration-300">Home</a>
 
-                <!-- My Profile Button -->
-                <a href="/userProfile" class="bg-green-500 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-600 transition duration-300">My Profile</a>
+                    <!-- My Profile Button -->
+                    <a href="/userProfile" class="bg-green-500 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-600 transition duration-300">My Profile</a>
+                </div>
             </div>
         </div>
     </div>
-</div>
     <%-include('partials/footer') %>
 </body>
 

@@ -1015,10 +1015,10 @@ app.get("/leaderboard", async (req, res) => {
                             ) AS combined_progress
                             GROUP BY email
                         )
-                        SELECT users.name, ((SUM(total_target_moves) / SUM(total_moves)) * 100)::numeric AS accuracy
+                        SELECT users.name, users.profile_image, ((SUM(total_target_moves) / SUM(total_moves)) * 100)::numeric AS accuracy
                         FROM all_progress
                         INNER JOIN users ON all_progress.email = users.email
-                        GROUP BY users.name
+                        GROUP BY users.name, users.profile_image
                         ORDER BY accuracy DESC
                         LIMIT 5`
             };
@@ -1026,8 +1026,8 @@ app.get("/leaderboard", async (req, res) => {
             const accuracyResult = await db.query(accuracyQuery);
             const topPlayers = accuracyResult.rows;
             
-            console.log(typeof topPlayers[0].accuracy);
             res.render("leaderboard", {
+                profileImage: req.user.profile_image,
                 name: req.user.name,
                 topPlayers: topPlayers
             });
@@ -1036,7 +1036,7 @@ app.get("/leaderboard", async (req, res) => {
             res.status(500).send("Internal Server Error");
         }
     } else {
-        res.redirect("/leaderboard");
+        res.redirect("/login");
     }
 });
 
