@@ -72,6 +72,7 @@ app.set('view engine', 'ejs');
 const isValidPosition = (row, col, grid) => {
     return row >= 0 && row < grid.length && col >= 0 && col < grid[0].length;
 };
+
 const createGrid = (req, n) => {
     const initialGrid = Array.from({ length: req.session.matrixSize }, () =>
     Array(req.session.matrixSize).fill(0)
@@ -126,6 +127,7 @@ const toggleAdjacentLights = (grid, row, col, n) => {
 
 
 app.get("/", (req, res) => {
+    req.session.hint = true;
     req.session.matrixSize = req.session.matrixSize || 3;
     req.session.level = req.session.level || 1;
     req.session.board = createGrid(req, 2);
@@ -160,6 +162,8 @@ app.get("/login", (req, res) => {
 });
 
 app.get('/signup', (req, res) => {
+    db.query("DELETE FROM OTP WHERE expiration_time < current_timestamp");
+
     res.render('login.ejs', { page: 'signup', name: "Login" });
 });
 
@@ -200,7 +204,7 @@ app.post("/api/toggleLights", (req, res) => {
 
     const gameEnded = req.session.board.every(row => row.every(cell => !cell));
 
-    if (req.isAuthenticated() && gameEnded) {
+    if (req.isAuthenticated() && gameEnded && req.session.hint) {
         const { email } = req.user;
         const {clickCount } = req.body; // Assuming level and clickCount are available from the request body
     
@@ -252,6 +256,7 @@ app.post("/api/toggleLights", (req, res) => {
 });
 
 app.get("/api/getHint", (req, res) => {
+    req.session.hint = false;
     console.log(req.session.level, req.session.hintGrid);
     // console.log("hint api is called successfully.");
     if(req.session.matrixSize == 5 ) {
@@ -263,6 +268,7 @@ app.get("/api/getHint", (req, res) => {
 })
 
 app.get("/api/getHint3", (req, res) => {
+    req.session.hint = false;
     // console.log("hint api is called successfully.");
     res.json({ hintGrid3:req.session.hintGrid3 });
 })
@@ -345,6 +351,7 @@ const toggle3Lights = (req,grid, row, col) => {
 // var matrixSize3 = 3;
 // Home route
 app.get("/state3", (req, res) => {
+    req.session.hint = true;
     req.session.matrixSize3 = req.session.matrixSize3 || 3;
     req.session.level3 = req.session.level3 || 1;
     // const level = 2;
@@ -393,7 +400,7 @@ app.post("/api/toggle3Lights", (req, res) => {
     const gameEnded = req.session.board3.every(row => row.every(c => !c));
     // console.log(gameEnded);
 
-    if (req.isAuthenticated() && gameEnded) {
+    if (req.isAuthenticated() && gameEnded && req.session.hint) {
         const { email } = req.user;
         const {clickCount } = req.body; // Assuming level and clickCount are available from the request body
     
@@ -482,7 +489,9 @@ app.post('/signup', (req, res) => {
                 // User does not exist, generate OTP and continue with signup process
                 const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
                 const expirationTime = new Date();
-                expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 1 minute from now
+                expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 3 minute from now
+                expirationTime.toUTCString();
+                // console.log(expirationTime);
 
                 const mailOptions = {
                     from: 'lightsout1811@gmail.com',
@@ -629,6 +638,7 @@ app.post('/forgot-password', (req, res) => {
                 const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
                 const expirationTime = new Date();
                 expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 3 minutes from now
+                expirationTime.toUTCString();
 
                 const mailOptions = {
                     from: 'lightsout1811@gmail.com',
@@ -697,7 +707,7 @@ app.post('/enter-otp', (req, res) => {
             const expirationTime = new Date(result.rows[0].expiration_time);
 
             // Check if OTP is expired
-            if (expirationTime <= new Date()) {
+            if (expirationTime <= new Date().toUTCString()) {
                 res.render("forgetPassword", { page: 'enterEmail', message: "OTP is expired!" , name: "Login"});
             }
 console.log("I am above otp matching.");
@@ -734,7 +744,7 @@ app.post("/resend-otp", (req, res) => {
                         const OTP = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: true });
                         const expirationTime = new Date();
                         expirationTime.setMinutes(expirationTime.getMinutes() + 3); // Set expiration time to 3 minutes from now
-
+                        expirationTime.toUTCString();
                         // Store the new OTP in the OTP table
                         db.query("INSERT INTO OTP (email, otp, expiration_time) VALUES ($1, $2, $3)", [email, OTP, expirationTime])
                             .then(() => {

@@ -71,9 +71,15 @@
         <div class="h-fit min-h-dvh flex items-center justify-center ">
 
             <div id="outer-hint-board"
-                class=" p-5 rounded-lg shadow-2xl w-full h-[96%] max-w-fit mx-auto overflow-hidden hidden">
+                class=" p-5 rounded-lg bg-pink-600 opacity-75 w-full h-[96%] max-w-fit mx-auto overflow-hidden hidden">
 
                 <div id="hint-board" class="mb-6 w-full min-w-max">
+                    
+                        <p class="text-yellow-500 break-words">
+                            *Progress will NOT be saved.
+                        </p>
+                    
+                    
                     <button id="remove-hint-button"
                         class="relative top-0 right-0 text-white bg-red-500 px-2 py-1 rounded-md">Remove</button>
                     <h3 class="text-lg font-bold mb-2">Hint:</h3>
@@ -97,7 +103,7 @@
                     <% for (let row=0; row < board.length; row++) { %>
                         <% for (let col=0; col < board[row].length; col++) { %>
                             <button id="cell_<%= row %>_<%= col %>"
-                                class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-yellow-500<% } else { %>bg-gray-300<% } %>"
+                                class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-purple-500<% } else { %>bg-gray-300<% } %>"
                                 data-row="<%= row %>" data-col="<%= col %>"></button>
                             <% } %>
                                 <% } %>
