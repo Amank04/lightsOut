@@ -260,10 +260,15 @@ app.get("/api/getHint", (req, res) => {
     console.log(req.session.level, req.session.hintGrid);
     // console.log("hint api is called successfully.");
     if(req.session.matrixSize == 5 ) {
-        const resultMatrix = performMatrixOperations(req.session.hintGrid);
-        res.json({ hintGrid:resultMatrix });
+        const resultMatrix5 = performMatrixOperations5(req.session.hintGrid);
+        res.json({ hintGrid:resultMatrix5 });
+    } else if (req.session.matrixSize == 4) {
+        const resultMatrix4 = performMatrixOperations4(req.session.hintGrid);
+        res.json({ hintGrid:resultMatrix4 });
+
     } else {
         res.json({hintGrid:req.session.hintGrid});
+
     }
 })
 
@@ -1127,8 +1132,8 @@ app.listen(port, () => {
 });
 
 
-
-function performMatrixOperations(matrix01) {
+// 5*5 matrix minimal solution function starts here.
+function performMatrixOperations5(matrix01) {
   const matrix02 = [
     [0, 1, 1, 1, 0],
     [1, 0, 1, 0, 1],
@@ -1157,7 +1162,7 @@ function performMatrixOperations(matrix01) {
 
   const countOnesMatrix01 = countOnesInArray(matrix01);
   const countOnesResult1 = countOnesInArray(modifiedResult1);
-  const countOnesResult2 = countOnesInArray(modifiedResult2);
+  const countOnesResult2 = countOnesInArray(modifiedResult2); 
   const countOnesResult3 = countOnesInArray(modifiedResult3);
 
   const leastOnesCount = Math.min(countOnesMatrix01, countOnesResult1, countOnesResult2, countOnesResult3);
@@ -1172,6 +1177,7 @@ function performMatrixOperations(matrix01) {
     return modifiedResult3;
   }
 }
+// 5*5 matrix minimal solution function ends here.
 
 function countOnesInArray(array) {
   let count = 0;
@@ -1187,8 +1193,144 @@ function countOnesInArray(array) {
   return count;
 }
 
+// 4*4 matrix minimal solution function starts here.
+function performMatrixOperations4(matrix1) {
+    // Define matrices as 2D arrays
+    const matrix02 = [
+          [0,1,1,1],
+          [1,0,1,0],
+          [1,1,0,0],
+          [1,0,0,0],
+        ];
+  
+        const matrix03 = [
+          [1,1,0,1],
+          [0,0,0,1],
+          [1,1,1,0],
+          [0,1,0,0],
+        ];
+  
+        const matrix04 = [
+          [1,0,1,1],
+          [1,0,0,0],
+          [0,1,1,1],
+          [0,0,1,0],
+        ];
+  
+        const matrix05 = [
+          [1,1,1,0],
+          [0,1,0,1],
+          [0,0,1,1],
+          [0,0,0,1],
+    ];
+  
+    // Convert input matrix to mathjs matrix
+    const matrix01 = matrix(matrix1);
+  
+    // Add matrices
+    const resultMatrix1 = add(matrix01, matrix(matrix02));
+    const resultMatrix2 = add(matrix01, matrix(matrix03));
+    const resultMatrix3 = add(matrix01, matrix(matrix04));
+    const resultMatrix4 = add(matrix01, matrix(matrix05));
+    
+    const resultMatrix5 = add(matrix01, matrix(matrix02), matrix(matrix03));
+    const resultMatrix6 = add(matrix01, matrix(matrix02), matrix(matrix04));
+    const resultMatrix7 = add(matrix01, matrix(matrix02), matrix(matrix05));
+    const resultMatrix8 = add(matrix01, matrix(matrix03), matrix(matrix04));
+    const resultMatrix9 = add(matrix01, matrix(matrix03), matrix(matrix05));
+    const resultMatrix10 = add(matrix01, matrix(matrix04), matrix(matrix05));
+    
+    const resultMatrix11 = add(matrix01, matrix(matrix02), matrix(matrix03), matrix(matrix04));
+    const resultMatrix12 = add(matrix01, matrix(matrix03), matrix(matrix04), matrix(matrix05));
+    const resultMatrix13 = add(matrix01, matrix(matrix04), matrix(matrix05), matrix(matrix02));
+    const resultMatrix14 = add(matrix01, matrix(matrix05), matrix(matrix02), matrix(matrix03));
+    
+    const resultMatrix15 = add(matrix01, matrix(matrix02), matrix(matrix03), matrix(matrix04), matrix(matrix05));
+  
+    // Modify result matrices by taking modulo 2
+    const modifiedResult1 = resultMatrix1.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult2 = resultMatrix2.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult3 = resultMatrix3.toArray().map(row => row.map(value => value % 2));
+    
+    const modifiedResult4 = resultMatrix4.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult5 = resultMatrix5.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult6 = resultMatrix6.toArray().map(row => row.map(value => value % 2));
+    
+    const modifiedResult7 = resultMatrix7.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult8 = resultMatrix8.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult9 = resultMatrix9.toArray().map(row => row.map(value => value % 2));
+    
+    const modifiedResult10 = resultMatrix10.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult11 = resultMatrix11.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult12 = resultMatrix12.toArray().map(row => row.map(value => value % 2));
+    
+    const modifiedResult13 = resultMatrix13.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult14 = resultMatrix14.toArray().map(row => row.map(value => value % 2));
+    const modifiedResult15 = resultMatrix15.toArray().map(row => row.map(value => value % 2));
+  
+    // Count number of '1's in each matrix
+    const countOnesMatrix01 = countOnesInArray(matrix1);
+    
+    const countOnesResult1 = countOnesInArray(modifiedResult1);
+    const countOnesResult2 = countOnesInArray(modifiedResult2);
+    const countOnesResult3 = countOnesInArray(modifiedResult3);
+    
+    const countOnesResult4 = countOnesInArray(modifiedResult4);
+    const countOnesResult5 = countOnesInArray(modifiedResult5);
+    const countOnesResult6 = countOnesInArray(modifiedResult6);
+    
+    const countOnesResult7 = countOnesInArray(modifiedResult7);
+    const countOnesResult8 = countOnesInArray(modifiedResult8);
+    const countOnesResult9 = countOnesInArray(modifiedResult9);
+    
+    const countOnesResult10 = countOnesInArray(modifiedResult10);
+    const countOnesResult11 = countOnesInArray(modifiedResult11);
+    const countOnesResult12 = countOnesInArray(modifiedResult12);
+    
+    const countOnesResult13 = countOnesInArray(modifiedResult13);
+    const countOnesResult14 = countOnesInArray(modifiedResult14);
+    const countOnesResult15 = countOnesInArray(modifiedResult15);
+  
+    // Determine the matrix with the least number of '1's
+    const leastOnesCount = Math.min(countOnesMatrix01, countOnesResult1, countOnesResult2, countOnesResult3, countOnesResult4, countOnesResult5, countOnesResult6, countOnesResult7, countOnesResult8, countOnesResult9, countOnesResult10, countOnesResult11, countOnesResult12, countOnesResult13, countOnesResult14, countOnesResult15);
+  
+    // Return the matrix (2D array) with the least number of '1's
+    if (countOnesMatrix01 === leastOnesCount) {
+      return matrix1;
+    } else if (countOnesResult1 === leastOnesCount) {
+      return modifiedResult1;
+    } else if (countOnesResult2 === leastOnesCount) {
+      return modifiedResult2;
+    } else if (countOnesResult3 === leastOnesCount) {
+      return modifiedResult3;
+    } else if (countOnesResult4 === leastOnesCount) {
+      return modifiedResult4;
+    } else if (countOnesResult5 === leastOnesCount) {
+      return modifiedResult5;
+    } else if (countOnesResult6 === leastOnesCount) {
+      return modifiedResult6;
+    } else if (countOnesResult7 === leastOnesCount) {
+      return modifiedResult7;
+    } else if (countOnesResult8 === leastOnesCount) {
+      return modifiedResult8;
+    } else if (countOnesResult9 === leastOnesCount) {
+      return modifiedResult9;
+    } else if (countOnesResult10 === leastOnesCount) {
+      return modifiedResult10;
+    } else if (countOnesResult11 === leastOnesCount) {
+      return modifiedResult11;
+    } else if (countOnesResult12 === leastOnesCount) {
+      return modifiedResult12;
+    } else if (countOnesResult13 === leastOnesCount) {
+      return modifiedResult13;
+    } else if (countOnesResult14 === leastOnesCount) {
+      return modifiedResult14;
+    } else {
+      return modifiedResult15;
+    }
+  }
 
-
+// 4*4 matrix minimal solution function ends here.
 
 // console.log("Matrix with the least number of '1's:");
 // console.log(resultMatrix);
