@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/styles/style.css"> <!-- Update the path to your CSS file -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9151064528587732"
-     crossorigin="anonymous"></script>
-    <link rel="icon" href="/photos/lights_out_icon.jpeg" type="image/jpeg">
+        crossorigin="anonymous"></script>
+    <link rel="icon" href="/photos/Icons_LO.png" type="image/png">
 
     <style>
         body {
@@ -21,7 +21,7 @@
         }
 
         #congratulations {
-            background-color: #68D391;
+            background-color: #d368a3;
             /* Update the background color as needed */
         }
 
@@ -68,14 +68,24 @@
     <!-- Header in partials -->
     <%- include('partials/header') %>
 
-        <div class="h-fit min-h-dvh flex items-center justify-center ">
+        <div class="h-fit min-h-dvh flex items-center justify-center my-4">
 
             <div id="outer-hint-board"
-                class=" p-5 rounded-lg shadow-2xl w-full h-[96%] max-w-fit mx-auto overflow-hidden hidden">
+                class=" p-5 rounded-lg bg-pink-500 opacity-75 w-full h-[96%] max-w-fit mx-auto overflow-hidden hidden">
 
-                <div id="hint-board" class="mb-6 w-full min-w-max">
+                <div id="hint-board" class="mb-6 w-full">
+
+                    
+                    
                     <button id="remove-hint-button"
-                        class="relative top-0 right-0 text-white bg-red-500 px-2 py-1 rounded-md">Remove</button>
+                    class="relative top-0 right-0 text-white bg-red-500 px-2 py-1 rounded-md">Remove</button>
+
+                    <% if(locals.name!="Login" ) { %>
+
+                        <p class="text-purple-950 break-words text-center font-bold my-1">
+                            Progress will NOT be saved.
+                        </p>
+                        <% } %>
                     <h3 class="text-lg font-bold mb-2">Hint:</h3>
                     <div id="hint-matrix" class="grid grid-cols-<%=board.length %> gap-2">
 
@@ -92,13 +102,21 @@
 
 
                 <!-- Game Board -->
-                <div id="game-board" class="grid grid-cols-<%=board.length %>  gap-2 mb-6 w-full min-w-max ">
+                <div id="game-board" class="grid grid-cols-<%=board.length %>  gap-2 mb-6 w-full">
                     <!-- Dynamically generate buttons using EJS -->
                     <% for (let row=0; row < board.length; row++) { %>
                         <% for (let col=0; col < board[row].length; col++) { %>
-                            <button id="cell_<%= row %>_<%= col %>"
-                                class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-yellow-500<% } else { %>bg-gray-300<% } %>"
-                                data-row="<%= row %>" data-col="<%= col %>"></button>
+                            <% if(board.length>4) {%>
+
+                                <button id="cell_<%= row %>_<%= col %>"
+                                    class="h-14 w-14 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-purple-500<% } else { %>bg-gray-300<% } %>"
+                                    data-row="<%= row %>" data-col="<%= col %>"></button>
+                                <% } else { %>
+
+                                    <button id="cell_<%= row %>_<%= col %>"
+                                        class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-purple-500<% } else { %>bg-gray-300<% } %>"
+                                        data-row="<%= row %>" data-col="<%= col %>"></button>
+                                    <% }%>
                             <% } %>
                                 <% } %>
                 </div>
@@ -107,7 +125,7 @@
                 <!-- Congratulations on winning the game. -->
                 <div id="congratulations" class="w-full text-center p-6 hidden text-white rounded-lg">
                     <img src="gifs/yay.gif" alt="Congratulations!, you won the game." class="h-16 mx-auto mb-4">
-                    <h2 class="text-4xl font-bold mb-4">Congratulations!</h2>
+                    <p class="text-4xl font-bold mb-4">Congratulations!</p>
                     <p class="text-lg">You won the game! 🎉</p>
                     <p id="total-moves" class="text-lg"></p>
                     <p id="minimum-moves" class="text-lg">Target Moves: <%=level %>
@@ -257,7 +275,13 @@
                         console.log(matrixSize)
                         for (let col = 0; col < matrixSize; col++) {
                             const button = document.getElementById(`cell_${row}_${col}`);
-                            button.className = `h-16 w-16 rounded-md ${newBoard[row][col] ? 'bg-yellow-500' : 'bg-gray-300'}`;
+                            if(matrixSize>4) {
+
+                                button.className = `h-14 w-14 rounded-md ${newBoard[row][col] ? 'bg-purple-500' : 'bg-gray-300'}`;
+                            } else {
+
+                                button.className = `h-16 w-16 rounded-md ${newBoard[row][col] ? 'bg-purple-500' : 'bg-gray-300'}`;
+                            }
                         }
                     }
                 }
@@ -289,11 +313,19 @@
                         for (let j = 0; j < hintMatrix[i].length; j++) {
                             // Create a div element for the cell
                             const cellDiv = document.createElement('div');
-                            cellDiv.classList.add('h-16', 'w-16', 'rounded-md', 'bg-gray-300', 'relative');
+                            if (hintMatrix.length > 4) {
+
+                                cellDiv.classList.add('h-14', 'w-14', 'rounded-md', 'bg-gray-300', 'relative');
+                            }
+                            else {
+
+                                cellDiv.classList.add('h-16', 'w-16', 'rounded-md', 'bg-gray-300', 'relative');
+                            }
+
 
                             // Create a div element for the number
                             const numberDiv = document.createElement('div');
-                            numberDiv.classList.add('absolute', 'inset-0', 'flex', 'items-center', 'justify-center', 'text-gray-700', 'text-lg', 'font-bold');
+                            numberDiv.classList.add('absolute', 'inset-0', 'flex', 'items-center', 'justify-center', 'text-white', 'text-lg', 'font-bold');
                             numberDiv.textContent = hintMatrix[i][j]; // Set the content of the number div to the cell value
                             console.log(hintMatrix[i][j]);
                             // Append the number div to the cell div
