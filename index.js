@@ -296,7 +296,7 @@ app.post("/state", (req, res) => {
     }
 });
 
-const create3Grid = (req,matrixSize3, level3) => {
+const create3Grid = (req, matrixSize3, level3) => {
     const initialGrid = new Array(matrixSize3).fill().map(() =>
         new Array(matrixSize3).fill(0) // Initialize with color white (0)
     );
@@ -306,23 +306,32 @@ const create3Grid = (req,matrixSize3, level3) => {
         Array(matrixSize3).fill(0)
     );
 
+    // Keep track of button presses
+    const buttonPresses = new Array(matrixSize3).fill().map(() =>
+        new Array(matrixSize3).fill(0)
+    );
+
     // Apply a series of random moves to make the grid solvable
     const moves = level3; // Adjust the number of moves as needed
 
     for (let i = 0; i < moves; i++) {
         let randomRow, randomCol;
-
+        
         // Generate unique random values
         do {
             randomRow = Math.floor(Math.random() * matrixSize3);
             randomCol = Math.floor(Math.random() * matrixSize3);
-        } while (initialGrid[randomRow][randomCol] !== 0); // Continue generating until an unoccupied cell is found
+        } while (buttonPresses[randomRow][randomCol] >= 2); // Continue generating until a cell is found with less than 2 button presses
 
-        toggle3Lights(req,initialGrid, randomRow, randomCol);
+        toggle3Lights(req, initialGrid, randomRow, randomCol);
+        buttonPresses[randomRow][randomCol]++;
     }
+
+    console.log(initialGrid);
 
     return initialGrid;
 };
+
 
 const toggle3Lights = (req,grid, row, col) => {
     // console.log("I am called.");
@@ -361,15 +370,26 @@ app.get("/state3", (req, res) => {
     req.session.level3 = req.session.level3 || 1;
     // const level = 2;
     req.session.board3 = create3Grid(req,req.session.matrixSize3, req.session.level3);
-    // console.log("level3:" + level3)
-    // console.log({ board3 });
-    // console.log(board3.length, board3[0].length)
+    req.session.sumOfValues = 0;
+    if (req.session.hintGrid3) {
+    
+        // Iterate over each row in the 2D array
+        for (let i = 0; i < req.session.hintGrid3.length; i++) {
+            // Iterate over each element in the current row
+            for (let j = 0; j < req.session.hintGrid3[i].length; j++) {
+                // Add the current element to the sum
+                req.session.sumOfValues += req.session.hintGrid3[i][j];
+            }
+        }
+    }
+    console.log(req.session.sumOfValues);
+  
     if (req.isAuthenticated()) {
-        res.render("3state.ejs", { board:req.session.board3, level:req.session.level3, matrixSize:req.session.matrixSize3, name: req.user.name, profileImage:req.user.profile_image });
+        res.render("3state.ejs", { board:req.session.board3,target:req.session.sumOfValues, level:req.session.level3, matrixSize:req.session.matrixSize3, name: req.user.name, profileImage:req.user.profile_image });
         // res.render("submit.ejs");
     } else {
         // res.redirect("/login");
-        res.render("3state.ejs", { board:req.session.board3, level:req.session.level3, matrixSize:req.session.matrixSize3, name: "Login" });
+        res.render("3state.ejs", { board:req.session.board3,target:req.session.sumOfValues, level:req.session.level3, matrixSize:req.session.matrixSize3, name: "Login" });
     }
     // res.render("3state.ejs", { board: board3, level: level3, matrixSize: matrixSize3 });
 });
@@ -438,7 +458,7 @@ app.post("/api/toggle3Lights", (req, res) => {
                 // Data does not exist for the email and level, insert a new record
                 db.query(
                     "INSERT INTO UserProgress3 (email, level, moves, targetMoves) VALUES ($1, $2, $3, $4)",
-                    [email, req.session.level3, clickCount, 2*req.session.level3]
+                    [email, req.session.level3, clickCount, req.session.sumOfValues]
                 )
                 .then(() => {
                     console.log(`Inserted new progress for level ${req.session.level3} and email ${email}`);
@@ -907,17 +927,47 @@ console.log(userProfile.profile_image);
     }
 });
 
-app.get("/edit-profile", (req,res)=> {
+// app.get("/edit-profile", (req,res)=> {
 
-    // console.log(req.user);
-    if(req.isAuthenticated()) {
+//     // console.log(req.user);
+//     if(req.isAuthenticated()) {
 
-        res.render("edit-profile",{name: req.user.name, email: req.user.email, id:req.user.id, profileImage: req.user.profile_image});
-    } else {
+//         res.render("edit-profile",{name: req.user.name, email: req.user.email, id:req.user.id, profileImage: req.user.profile_image});
+//     } else {
 
-        res.render("login",{name:"Login",page:"login"});
+//         res.render("login",{name:"Login",page:"login"});
+//     }
+// });
+
+// Assuming you have a route for updating the user's name
+app.post('/update-name', async (req, res) => {
+    const { newName } = req.body;
+
+    try {
+        // Update user's name in the database
+        const queryUserProfile = {
+            text: 'UPDATE public.users SET name = $1 WHERE email = $2',
+            values: [newName, req.user.email]
+        };
+
+        // Execute the SQL query using the pool
+        const result = await db.query(queryUserProfile);
+
+        if (result.rowCount > 0) {
+            // Successfully updated the user's name
+            res.redirect('/userProfile');
+        } else {
+            // User with the specified email not found
+            res.status(404).json({ error: 'User not found or name not updated' });
+        }
+    } catch (error) {
+        // Handle database query error
+        console.error('Error updating user name:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-})
+});
+
+
 
 app.post('/update-profile-picture/:id', upload.single('profileImage'), async (req, res) => {
     const userID = req.params.id;
@@ -950,70 +1000,70 @@ app.post('/update-profile-picture/:id', upload.single('profileImage'), async (re
 
 
 
-app.post('/update-profile/:id', upload.single('profileImage'), async (req, res) => {
-    const userID = req.params.id;
-    const { name, email, password } = req.body;
-    console.log(password.length);
+// app.post('/update-profile/:id', upload.single('profileImage'), async (req, res) => {
+//     const userID = req.params.id;
+//     const { name, email, password } = req.body;
+//     console.log(password.length);
 
-    try {
-        // Construct the SQL query to update user's profile
-        let query;
-        let queryValues;
+//     try {
+//         // Construct the SQL query to update user's profile
+//         let query;
+//         let queryValues;
 
-        if (password.length>0) {
-            // Update profile including password
-            query = `
-                UPDATE public.users
-                SET name = $1, email = $2, password = $3
-                WHERE id = $4
-                RETURNING *;
-            `;
-            queryValues = [name, email, password, userID];
-        } else {
-            // Update profile excluding password
-            query = `
-                UPDATE public.users
-                SET name = $1, email = $2
-                WHERE id = $3
-                RETURNING *;
-            `;
-            queryValues = [name, email, userID];
-        }
+//         if (password.length>0) {
+//             // Update profile including password
+//             query = `
+//                 UPDATE public.users
+//                 SET name = $1, email = $2, password = $3
+//                 WHERE id = $4
+//                 RETURNING *;
+//             `;
+//             queryValues = [name, email, password, userID];
+//         } else {
+//             // Update profile excluding password
+//             query = `
+//                 UPDATE public.users
+//                 SET name = $1, email = $2
+//                 WHERE id = $3
+//                 RETURNING *;
+//             `;
+//             queryValues = [name, email, userID];
+//         }
         
-        // Execute the SQL query with parameters
-        const result = await db.query(query, queryValues);
+//         // Execute the SQL query with parameters
+//         const result = await db.query(query, queryValues);
 
-        // Send back the updated user data
-        res.json({ message: 'Profile updated successfully', user: result.rows[0] });
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
+//         // Send back the updated user data
+//         res.json({ message: 'Profile updated successfully', user: result.rows[0] });
+//     } catch (error) {
+//         console.error('Error updating profile:', error);
+//         res.status(500).json({ error: 'Internal Server Error' });
+//     }
+// });
 
 
 
 // Add route to handle profile updates
-app.post('/edit-profile', (req, res) => {
-    const { name } = req.body;
-    const email = req.session.user.email; // Assuming you're using session for authentication
+// app.post('/edit-profile', (req, res) => {
+//     const { name } = req.body;
+//     const email = req.session.user.email; // Assuming you're using session for authentication
 
-    // Update the name in the Users table
-    const updateNameQuery = {
-        text: 'UPDATE Users SET name = $1 WHERE email = $2',
-        values: [name, email],
-    };
+//     // Update the name in the Users table
+//     const updateNameQuery = {
+//         text: 'UPDATE Users SET name = $1 WHERE email = $2',
+//         values: [name, email],
+//     };
 
-    db.query(updateNameQuery)
-        .then(() => {
-            // Name updated successfully, render userProfile with updated name
-            res.render("userProfile", { name: name, email: email });
-        })
-        .catch(error => {
-            console.error('Error updating name:', error);
-            res.status(500).send('Error updating name');
-        });
-});
+//     db.query(updateNameQuery)
+//         .then(() => {
+//             // Name updated successfully, render userProfile with updated name
+//             res.render("userProfile", { name: name, email: email });
+//         })
+//         .catch(error => {
+//             console.error('Error updating name:', error);
+//             res.status(500).send('Error updating name');
+//         });
+// });
 
 
 app.get("/leaderboard", async (req, res) => {
@@ -1022,19 +1072,25 @@ app.get("/leaderboard", async (req, res) => {
             // Query to calculate accuracy for both 2-state and 3-state games
             const accuracyQuery = {
                 text: `WITH all_progress AS (
-                            SELECT email, SUM(moves) AS total_moves, SUM(targetmoves) AS total_target_moves
+                            SELECT email, 
+                                   SUM(moves) AS total_moves, 
+                                   SUM(targetmoves) AS total_target_moves,
+                                   COUNT(DISTINCT level) AS total_levels_played
                             FROM (
-                                SELECT email, moves, targetmoves FROM userprogress
+                                SELECT email, moves, targetmoves, level FROM userprogress
                                 UNION ALL
-                                SELECT email, moves, targetmoves FROM userprogress3
+                                SELECT email, moves, targetmoves, level FROM userprogress3
                             ) AS combined_progress
                             GROUP BY email
                         )
-                        SELECT users.name, users.profile_image, ((SUM(total_target_moves) / SUM(total_moves)) * 100)::numeric AS accuracy
+                        SELECT users.name, 
+                               users.profile_image, 
+                               ((SUM(total_target_moves) / SUM(total_moves)) * 100)::numeric AS accuracy,
+                               SUM(total_levels_played) AS total_levels_played
                         FROM all_progress
                         INNER JOIN users ON all_progress.email = users.email
                         GROUP BY users.name, users.profile_image
-                        ORDER BY accuracy DESC
+                        ORDER BY accuracy DESC, total_levels_played DESC
                         LIMIT 5`
             };
 

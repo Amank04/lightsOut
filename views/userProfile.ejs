@@ -10,160 +10,198 @@
     <link rel="stylesheet" href="/styles/style.css">
     <link rel="icon" href="/photos/Icons_LO.png" type="image/png">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9151064528587732"
-     crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script>
     <title>User Profile</title>
 </head>
 
 <body>
-    <%- include('partials/header') %> 
-    <div class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-poppins min-h-screen flex flex-col items-center">
-        <div class="profile-container bg-white p-8 rounded-lg shadow-md text-center w-full max-w-screen-md mt-8">
-            <!-- Displaying the user's image -->
-            <h2 class="text-4xl font-bold mb-4">Welcome <span id="username" class="text-pink-500"><%= name %></span>!</h2>
-            
-            <!-- Profile Picture Section -->
-            <div class="relative mb-8">
-                <!-- User's Profile Image -->
-                <% if(locals.profileImage) { %>
-                    <!-- Display profile image if available -->
-                    <img src="data:image/png;base64,<%= locals.profileImage.toString('base64') %>" alt="User's Profile" class="rounded-full h-24 w-24 mx-auto mb-4">
-                <% } else { %>
-                    <!-- Display default profile image if no image available -->
-                    <img src="https://static-assets-web.flixcart.com/batman-returns/batman-returns/p/images/profile-52e0dc.svg" alt="User's Profile" class="rounded-full h-24 w-24 mx-auto mb-4">
-                <% } %>
-                
-                
-                
-                <!-- Edit Profile Picture Button -->
-                <label for="profileImageInput" class="absolute bottom-0 right-0 -mr-4 -mb-4 bg-white text-gray-700 rounded-full p-2 hover:bg-gray-300 transition duration-300 cursor-pointer z-10" title="Edit profile picture">
-                    <i class="fas fa-edit"></i>
-                </label>
+    <%- include('partials/header') %>
+        <div
+            class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-poppins min-h-screen flex flex-col items-center">
+            <div class="profile-container bg-white p-8 rounded-lg shadow-md text-center w-full max-w-screen-md mt-8">
+                <!-- Displaying the user's image -->
+                <h2 class="text-4xl font-bold mb-4">Welcome <span id="username" class="text-pink-500">
+                        <%= name %>!
+                    </span>
+                    <form id="editNameForm" action="/update-name" method="POST" style="display: none">
+                        <input type="text" id="newNameInput" name="newName"
+                            class="border-b border-gray-400 focus:outline-none focus:border-pink-500" value="<%=name %>">
+                        <button type="submit" class="ml-2 text-gray-700 hover:text-gray-900 focus:outline-none">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </form>
+                    <button id="editNameBtn" class="ml-2 text-gray-700 hover:text-gray-900 focus:outline-none">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </h2>
 
-                <!-- Hidden File Input for Profile Picture -->
-                <form id="profileImageForm" action="/update-profile-picture/<%= userID %>" method="POST" enctype="multipart/form-data">
-                    <input type="file" id="profileImageInput" name="profileImage" style="display: none;">
-                </form>
-            </div>
+                <!-- Profile Picture Section -->
+                <div class="relative mb-8">
+                    <!-- User's Profile Image -->
+                    <% if(locals.profileImage) { %>
+                        <!-- Display profile image if available -->
+                        <img src="data:image/png;base64,<%= locals.profileImage.toString('base64') %>"
+                            alt="User's Profile" class="rounded-full h-24 w-24 mx-auto mb-4">
+                        <% } else { %>
+                            <!-- Display default profile image if no image available -->
+                            <img src="https://static-assets-web.flixcart.com/batman-returns/batman-returns/p/images/profile-52e0dc.svg"
+                                alt="User's Profile" class="rounded-full h-24 w-24 mx-auto mb-4">
+                            <% } %>
 
-            <!-- Overall Accuracy Section -->
-            <div class="bg-gray-200 rounded-lg p-6 mb-8">
-                <h3 class="text-xl font-bold mb-4">Overall Accuracy</h3>
-                <div class="text-4xl font-bold text-pink-500">
-                    <% if (overallAccuracy >= 80) { %>
-                        <i class="fas fa-thumbs-up text-green-500"></i>
-                    <% } else { %>
-                        <i class="fas fa-thumbs-down text-red-500"></i>
-                    <% } %>
-                    <%= overallAccuracy %>%
+
+
+                                <!-- Edit Profile Picture Button -->
+                                <label for="profileImageInput"
+                                    class="absolute bottom-0 right-0 -mr-4 -mb-4 bg-white text-gray-700 rounded-full p-2 hover:bg-gray-300 transition duration-300 cursor-pointer z-10"
+                                    title="Edit profile picture">
+                                    <i class="fas fa-edit"></i>
+                                </label>
+
+                                <!-- Hidden File Input for Profile Picture -->
+                                <form id="profileImageForm" action="/update-profile-picture/<%= userID %>" method="POST"
+                                    enctype="multipart/form-data">
+                                    <input type="file" id="profileImageInput" name="profileImage"
+                                        style="display: none;">
+                                </form>
                 </div>
-            </div>
 
-            <!-- Table for 2-state Accuracy -->
-            <div class="mb-8">
-                <h3 class="text-xl font-bold mb-2">Accuracy for 2-State</h3>
-                <table class="w-full border-collapse border border-gray-300">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="px-4 py-2 text-center">Level</th>
-                            <th class="px-4 py-2 text-center">Accuracy Percentage</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% progress2State.sort((a, b) => a.level - b.level).forEach(item => { %>
+                <!-- Overall Accuracy Section -->
+                <div class="bg-gray-200 rounded-lg p-6 mb-8">
+                    <h3 class="text-xl font-bold mb-4">Overall Accuracy</h3>
+                    <div class="text-4xl font-bold text-pink-500">
+                        <% if (overallAccuracy>= 80) { %>
+                            <i class="fas fa-thumbs-up text-green-500"></i>
+                            <% } else { %>
+                                <i class="fas fa-thumbs-down text-red-500"></i>
+                                <% } %>
+                                    <%= overallAccuracy %>%
+                    </div>
+                </div>
+
+                <!-- Table for 2-state Accuracy -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-2">Accuracy for 2-State</h3>
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead class="bg-gray-200">
                             <tr>
-                                <td class="px-4 py-2 align-middle text-center"><%= item.level %></td>
-                                <td class="px-4 py-2 flex items-center justify-center">
-                                    <% if (item.targetmoves !== 0) { %>
-                                        <%= ((item.targetmoves / item.moves) * 100).toFixed(2) %>%
-                                    <% } else { %>
-                                        0%
-                                    <% } %>
-                                </td>
+                                <th class="px-4 py-2 text-center">Level</th>
+                                <th class="px-4 py-2 text-center">Accuracy Percentage</th>
                             </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Table for 3-state Accuracy -->
-            <div class="mb-8">
-                <h3 class="text-xl font-bold mb-2">Accuracy for 3-State</h3>
-                <table class="w-full border-collapse border border-gray-300">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="px-4 py-2 text-center">Level</th>
-                            <th class="px-4 py-2 text-center">Accuracy Percentage</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% progress3State.sort((a, b) => a.level - b.level).forEach(item => { %>
+                        </thead>
+                        <tbody>
+                            <% progress2State.sort((a, b)=> a.level - b.level).forEach(item => { %>
+                                <tr>
+                                    <td class="px-4 py-2 align-middle text-center">
+                                        <%= item.level %>
+                                    </td>
+                                    <td class="px-4 py-2 flex items-center justify-center">
+                                        <% if (item.targetmoves !==0) { %>
+                                            <%= ((item.targetmoves / item.moves) * 100).toFixed(2) %>%
+                                                <% } else { %>
+                                                    0%
+                                                    <% } %>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table for 3-state Accuracy -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-2">Accuracy for 3-State</h3>
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead class="bg-gray-200">
                             <tr>
-                                <td class="px-4 py-2 align-middle text-center"><%= item.level %></td>
-                                <td class="px-4 py-2 flex items-center justify-center">
-                                    <% if (item.targetmoves !== 0) { %>
-                                        <%= ((item.targetmoves / item.moves) * 100).toFixed(2) %>%
-                                    <% } else { %>
-                                        0%
-                                    <% } %>
-                                </td>
+                                <th class="px-4 py-2 text-center">Level</th>
+                                <th class="px-4 py-2 text-center">Accuracy Percentage</th>
                             </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Edit Profile Button -->
-            <!-- Anchor button for leaderboard -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <a href="/leaderboard" class="w-full bg-green-500 text-white font-semibold px-1 py-2 rounded-full mb-4 hover:bg-blue-600 transition duration-300">View Leaderboard</a>
+                        </thead>
+                        <tbody>
+                            <% progress3State.sort((a, b)=> a.level - b.level).forEach(item => { %>
+                                <tr>
+                                    <td class="px-4 py-2 align-middle text-center">
+                                        <%= item.level %>
+                                    </td>
+                                    <td class="px-4 py-2 flex items-center justify-center">
+                                        <% if (item.targetmoves !==0) { %>
+                                            <%= ((item.targetmoves / item.moves) * 100).toFixed(2) %>%
+                                                <% } else { %>
+                                                    0%
+                                                    <% } %>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Edit Profile Button -->
+                <!-- Anchor button for leaderboard -->
                 
-                <a href="/edit-profile" class="w-full bg-green-500 text-white font-semibold px-1 py-2 rounded-full mb-4 hover:bg-green-600 transition duration-300">Edit Profile</a>
+                    <a href="/leaderboard"
+                        class="w-full bg-green-500 text-white font-semibold px-1 py-2 rounded-full my-2 px-2 mb-4 hover:bg-blue-600 transition duration-300">View
+                        Leaderboard</a>
+                
+
+                 <p class="text-red-400 italic mt-4">*You can change the Password using <span class="text-purple-950">Forget-password</span> feature.</p>
             </div>
-            
-            
         </div>
-    </div>
         </div>
-    </div>
-    <%- include('partials/footer') %>
+        </div>
+        <%- include('partials/footer') %>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const editProfilePictureBtn = document.getElementById('editProfilePicture');
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const editProfilePictureBtn = document.getElementById('editProfilePicture');
 
-            editProfilePictureBtn.addEventListener('click', function(e) {
-                e.preventDefault();
+                    editProfilePictureBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
 
-                // Trigger click event on hidden file input
-                document.getElementById('profileImageInput').click();
-            });
+                        // Trigger click event on hidden file input
+                        document.getElementById('profileImageInput').click();
+                    });
 
-            // Show tooltip on hover
-            const editBtn = document.querySelector('.bg-white');
-            editBtn.addEventListener('mouseover', function() {
-                const tooltip = document.createElement('span');
-                tooltip.textContent = 'Edit profile picture';
-                tooltip.classList.add('absolute', 'bg-gray-800', 'text-white', 'text-sm', 'px-2', 'py-1', 'rounded', 'bottom-0', 'right-0', 'mb-8', 'mr-4', 'opacity-0', 'transition', 'duration-300', 'ease-in-out', 'transform', 'translate-y-4');
-                editBtn.appendChild(tooltip);
-                setTimeout(() => {
-                    tooltip.classList.remove('opacity-0', 'translate-y-4');
-                }, 100);
-            });
+                    // Show tooltip on hover
+                    const editBtn = document.querySelector('.bg-white');
+                    editBtn.addEventListener('mouseover', function () {
+                        const tooltip = document.createElement('span');
+                        tooltip.textContent = 'Edit profile picture';
+                        tooltip.classList.add('absolute', 'bg-gray-800', 'text-white', 'text-sm', 'px-2', 'py-1', 'rounded', 'bottom-0', 'right-0', 'mb-8', 'mr-4', 'opacity-0', 'transition', 'duration-300', 'ease-in-out', 'transform', 'translate-y-4');
+                        editBtn.appendChild(tooltip);
+                        setTimeout(() => {
+                            tooltip.classList.remove('opacity-0', 'translate-y-4');
+                        }, 100);
+                    });
 
-            editBtn.addEventListener('mouseout', function() {
-                const tooltip = document.querySelector('.bg-gray-800');
-                tooltip.classList.add('opacity-0', 'translate-y-4');
-                setTimeout(() => {
-                    tooltip.remove();
-                }, 300);
-            });
-        });
-        document.getElementById('profileImageInput').addEventListener('change', function() {
-                // Submit the form when a file is selected
-                document.getElementById('profileImageForm').submit();
-            });
-        
-    </script>
+                    editBtn.addEventListener('mouseout', function () {
+                        const tooltip = document.querySelector('.bg-gray-800');
+                        tooltip.classList.add('opacity-0', 'translate-y-4');
+                        setTimeout(() => {
+                            tooltip.remove();
+                        }, 300);
+                    });
+
+
+                });
+                //Edit profile picture of the user.
+                document.getElementById('profileImageInput').addEventListener('change', function () {
+                    // Submit the form when a file is selected
+                    document.getElementById('profileImageForm').submit();
+                });
+                //Edit name of user
+                    const editNameBtn = document.getElementById('editNameBtn');
+                    const editNameForm = document.getElementById('editNameForm');
+
+                    editNameBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+
+                        // Toggle visibility of the edit form
+                        editNameForm.style.display = 'block';
+                        document.getElementById('newNameInput').focus(); // Focus on the input field
+                    });
+
+            </script>
 </body>
 
 </html>
