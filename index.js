@@ -17,6 +17,8 @@ import passport from "passport";
 import dotenv from 'dotenv';
 import GoogleStrategy from "passport-google-oauth2";
 import axios from "axios";
+import { Strategy as GitHubStrategy } from 'passport-github2';
+
 
 
 const app = express();
@@ -1193,6 +1195,63 @@ passport.use(
             const newUser = await db.query(
               "INSERT INTO users (name, email, password, profile_image) VALUES ($1, $2, $3, $4) RETURNING *",
               [profile.displayName, profile.emails[0].value, "google", pictureBuffer]
+            );
+            return cb(null, newUser.rows[0]);
+          } else {
+            return cb(null, result.rows[0]);
+          }
+        } catch (err) {
+          return cb(err);
+        }
+      }
+    )
+  );
+  // GitHub authentication route
+app.get(
+    "/auth/github",
+    passport.authenticate("github", {
+      scope: ["user:email"],
+    })
+  );
+  
+  // Redirect route after successful GitHub authentication
+  app.get(
+    "/auth/github/userProfile",
+    passport.authenticate("github", {
+      successRedirect: "/userProfile",
+      failureRedirect: "/login",
+    })
+  );
+  
+  // GitHub strategy configuration
+  passport.use(
+    "github",
+    new GitHubStrategy(
+      {
+        clientID: process.env.GITHUB_CLIENT_ID,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        callbackURL: "https://lightsout-w861.onrender.com/auth/github/userProfile",
+      },
+      async (accessToken, refreshToken, profile, cb) => {
+        
+        try {
+          const avatarUrl = profile.photos[0].value;
+          let avatarBuffer = null;
+  
+          if (avatarUrl) {
+            // Fetch the image and convert to buffer
+            const response = await axios.get(avatarUrl, { responseType: 'arraybuffer' });
+            if (response.status === 200) {
+              avatarBuffer = Buffer.from(response.data, 'binary');
+            }
+          }
+  
+          const result = await db.query("SELECT * FROM users WHERE email = $1", [profile.username]);
+          if (result.rows.length === 0) {
+            // If user doesn't exist, insert the user into the database with profile image data
+            const newUser = await db.query(
+              "INSERT INTO users (name, email, password, profile_image) VALUES ($1, $2, $3, $4) RETURNING *",
+              [profile.displayName, profile.username, "github", avatarBuffer]
             );
             return cb(null, newUser.rows[0]);
           } else {
