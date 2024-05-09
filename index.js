@@ -12,11 +12,12 @@ import cookieParser from "cookie-parser";
 // import flash from "express-flash";
 import flash from "connect-flash";
 import { matrix, add } from 'mathjs';
-
-
 import { Strategy } from "passport-local";
 import passport from "passport";
 import dotenv from 'dotenv';
+import GoogleStrategy from "passport-google-oauth2";
+import axios from "axios";
+
 
 const app = express();
 const port = 3000;
@@ -142,6 +143,21 @@ app.get("/", (req, res) => {
         res.render("index.ejs", { board, level:req.session.level, matrixSize:req.session.matrixSize, name: "Login" });
     }
 });
+
+app.get(
+    "/auth/google",
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+    })
+  );
+
+app.get(
+    "/auth/google/userProfile",
+    passport.authenticate("google", {
+      successRedirect: "/userProfile",
+      failureRedirect: "/login",
+    })
+  );
 
 app.get("/login", (req, res) => {
     
@@ -1146,6 +1162,49 @@ passport.use('local', new Strategy({
     }
 }));
 
+passport.use(
+    "google",
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: "http://localhost:3000/auth/google/userProfile",
+        userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
+      },
+      async (accessToken, refreshToken, profile, cb) => {
+        try {
+            const pictureUrl = profile.photos[0].value && profile.photos[0].value.length > 0 ? profile.photos[0].value : null;
+
+    let pictureBuffer = null;
+
+    if (pictureUrl) {
+      // Fetch the image and convert to buffer
+      const response = await axios.get(pictureUrl, { responseType: 'arraybuffer' });
+      if (response.status === 200) {
+        pictureBuffer = Buffer.from(response.data, 'binary');
+      }
+    }
+          console.log(profile);
+          const result = await db.query("SELECT * FROM users WHERE email = $1", [
+            profile.email,
+          ]);
+          if (result.rows.length === 0) {
+            // If user doesn't exist, insert the user into the database with profile image data
+            const newUser = await db.query(
+              "INSERT INTO users (name, email, password, profile_image) VALUES ($1, $2, $3, $4) RETURNING *",
+              [profile.displayName, profile.emails[0].value, "google", pictureBuffer]
+            );
+            return cb(null, newUser.rows[0]);
+          } else {
+            return cb(null, result.rows[0]);
+          }
+        } catch (err) {
+          return cb(err);
+        }
+      }
+    )
+  );
+  
 // Serialize and deserialize user
 passport.serializeUser((user, cb) => {
     cb(null, user.email); // Assuming 'id' is a unique identifier for the user

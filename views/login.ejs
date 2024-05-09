@@ -35,6 +35,12 @@
                     </div>
                 </form>
                 <p class="text-gray-700 text-center">Don't have an account? <a href="/signup" class="text-green-500 font-semibold">Sign up</a></p>
+                <div class="flex justify-center items-center mt-4">
+                    <a class="btn bg-red-600 text-white font-semibold px-6 py-3 rounded-lg mb-6 hover:bg-red-700 transition duration-200" href="/auth/google" role="button">
+                        <i class="fab fa-google"></i>
+                        Sign In with Google
+                    </a>
+                </div>
             <% } else if (page === 'signup') { %>
                 <h3 class="text-2xl font-semibold mb-6 text-center text-gray-700">Sign Up</h3>
                 <% if(locals.userExists=="false")  {%>
@@ -47,6 +53,12 @@
                     <input type="submit" value="Sign Up" class="w-full bg-green-500 text-white font-semibold px-6 py-3 rounded-lg mb-6 hover:bg-green-600 transition duration-200">
                 </form>
                 <p class="text-gray-700 text-center">Already have an account? <a href="/login" class="text-green-500 font-semibold">Login</a></p>
+                <div class="flex justify-center items-center mt-4">
+                    <a class="btn bg-red-600 text-white font-semibold px-6 py-3 rounded-lg mb-6 hover:bg-red-700 transition duration-200" href="/auth/google" role="button">
+                        <i class="fab fa-google"></i>
+                        Sign Up with Google
+                    </a>
+                </div>
             
             <% } else if (page === 'OTP') { %>
                 <h3 class="text-2xl font-semibold mb-6 text-center text-gray-700">Sign Up</h3>
@@ -65,9 +77,11 @@
                 </form>
                 <p class="text-gray-700 text-center">Already have an account? <a href="/login" class="text-green-500 font-semibold">Login</a></p>
             <% } %>
+            
         </div>
     </div>
-     <%- include('partials/footer') %> 
+    
+    <%- include('partials/footer') %> 
 </body>
 <script>
     setTimeout(() => {
