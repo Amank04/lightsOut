@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Experience the classic Lights Out puzzle game with a twist! This unique web version includes both 2-state and revolutionary 3-state gameplay, offering cutting-edge UI design. Challenge yourself to solve the grid by strategically toggling lights.">
+    <link rel="stylesheet" href="/styles/style.css"> <!-- Update the path to your CSS file -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9151064528587732"
+        crossorigin="anonymous"></script>
+    <link rel="icon" href="/photos/Icons_LO.png" type="image/png">
+
+    <style>
+        body {
+            /* background: linear-gradient(to right, #4A5568, #2D3748); */
+            background-image: url('https://source.unsplash.com/1600x900/?game');/
+            /* Update the gradient colors as needed */
+        }
+
+        #game-board {
+            margin: 0 auto;
+        }
+
+        #congratulations {
+            background-color: #d368a3;
+            /* Update the background color as needed */
+        }
+
+        #hint-board .rounded-md {
+            border: 2px solid #E5E7EB;
+            /* Add border for a more refined look */
+        }
+
+        #hint-matrix .rounded-md {
+            background-color: transparent !important;
+            /* Remove background color */
+            box-shadow: none;
+            /* Remove shadow */
+        }
+
+        #hint-matrix .rounded-md div {
+            background-color: transparent;
+            /* Remove background color */
+            box-shadow: none;
+            /* Remove shadow */
+        }
+
+        #hint-matrix .rounded-md div div {
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            /* Add text shadow for better readability */
+        }
+
+        /* Define the transition effect */
+        .transition-effect {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* Define the hover effect */
+        .transition-effect:hover {
+            transform: scale(1.1);
+            /* For example, scale the size of the element */
+        }
+    </style>
+    <title>Lights_Out</title>
+</head>
+
+<body class="h-fit ">
+
+    <!-- Header in partials -->
+    <%- include('partials/header') %>
+
+        <div class="h-fit min-h-dvh flex items-center justify-center my-4">
+
+            <div id="outer-hint-board"
+                class=" p-5 rounded-lg bg-pink-500 opacity-75 w-full h-[96%] max-w-fit mx-auto overflow-hidden hidden">
+
+                <div id="hint-board" class="mb-6 w-full">
+
+
+
+                    <button id="remove-hint-button text" aria-label="Remove Hint"
+                        class="relative top-0 right-0 text-white bg-red-500 px-2 py-1 rounded-md">Remove</button>
+
+                    <% if(locals.name!="Login" ) { %>
+
+                        <p class="text-purple-950 break-words text-center font-bold my-1">
+                            Progress will NOT be saved.
+                        </p>
+                        <% } %>
+                            <h3 class="text-lg font-bold mb-2">Hint:</h3>
+                            <div id="hint-matrix" class="grid grid-cols-<%=board.length %> gap-2">
+
+                                <!-- This structure is dynamically created by the client side javascript -->
+
+                            </div>
+                </div>
+            </div>
+            <div id="complete-game"
+                class="bg-white p-5 rounded-lg shadow-md w-full h-[96%] max-w-fit mx-auto overflow-hidden">
+                <!-- Hint Board -->
+
+
+
+
+                <!-- Game Board -->
+                <div id="game-board" class="grid grid-cols-<%=board.length %>  gap-2 mb-6 w-full">
+                    <!-- Dynamically generate buttons using EJS -->
+                    <% for (let row=0; row < board.length; row++) { %>
+                        <% for (let col=0; col < board[row].length; col++) { %>
+                            <% if(board.length>4) {%>
+
+                                <button id="cell_<%= row %>_<%= col %>"
+                                    class="h-14 w-14 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-purple-500<% } else { %>bg-gray-300<% } %>"
+                                    data-row="<%= row %>" data-col="<%= col %>" aria-label="Big Light"></button>
+                                <% } else { %>
+
+                                    <button id="cell_<%= row %>_<%= col %>"
+                                        class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-purple-500<% } else { %>bg-gray-300<% } %>"
+                                        data-row="<%= row %>" data-col="<%= col %>" aria-label="Small Light"></button>
+                                    <% }%>
+                                        <% } %>
+                                            <% } %>
+                </div>
+
+
+                <!-- Congratulations on winning the game. -->
+                <div id="congratulations" class="w-full text-center p-6 hidden text-white rounded-lg">
+                    <img src="gifs/yay.gif" alt="Congratulations!, you won the game." class="h-16 mx-auto mb-4">
+                    <p class="text-4xl font-bold mb-4">Congratulations!</p>
+                    <p class="text-lg">You won the game! 🎉</p>
+                    <p id="total-moves" class="text-lg"></p>
+                    <p id="minimum-moves" class="text-lg">Target Moves: <%=level %>
+                    </p>
+                </div>
+
+
+
+                <!-- Additional Components -->
+                <div class="grid">
+                    <!-- Player Information -->
+                    <div id="moves" class="flex items-center justify-between mb-4">
+                        <p id="target-moves" class="text-xs">Target Moves: <%=level %>
+                        </p>
+                        <p id="user-moves" class="text-xs">Your Moves: 0 </p>
+                        <button id="hint-button text" class="text-blue-500" aria-label="Get Hint">Hint</button>
+                    </div>
+
+                    <!-- State Selector -->
+                    <form id="game-state" class="mb-4" action="/state" method="POST">
+                        <label class="block text-sm font-medium text-gray-700" for="mode-selector">Select Mode:</label>
+                        <select id="mode-selector" name="level" onchange="submitStateForm()"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
+                            <option value="Normal">Normal Mode</option>
+                            <option value="Pro">Pro Mode</option>
+                        </select>
+
+                    </form>
+
+
+                    <!-- Level Selector -->
+                    <form id="levelForm" class="mb-4" action="/levels" method="POST">
+                        <label class="block text-sm font-medium text-gray-700" for="level-selector">Select Level:</label>
+                        <select id="level-selector" name="level" onchange="submitLevelForm()"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300">
+                            <option value="<%=level %>">Level <%=level %>
+                            </option>
+                            <option value="1">Level 1</option>
+                            <option value="2">Level 2</option>
+                            <option value="3">Level 3</option>
+                            <option value="4">Level 4</option>
+                            <option value="5">Level 5</option>
+                            <option value="6">Level 6 👑 </option>
+                            <option value="7">Level 7</option>
+                            <option value="8">Level 8</option>
+                            <option value="9">Level 9</option>
+                            <option value="10">Level 10</option>
+                            <!-- Add more levels as needed -->
+                        </select>
+
+                    </form>
+
+
+                    <!-- Current Level Display -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700" for="level">Current Level:</label>
+                        <span id="current-level" class="text-lg font-semibold">
+                            <%=level %>
+                        </span>
+                    </div>
+
+                    <!-- Nevel Level Anchor -->
+                    <div class="flex">
+
+                        <a id="previous-game" href="/levels?CurrLevel=<%= level %>&id=0"
+                            class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white text-fit mr-1 px-4 py-2 rounded-md">Prev
+                        </a>
+                        <a id="next-game" href="/levels?CurrLevel=<%= level %>&id=1"
+                            class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white text-fit ml-1 px-4 py-2 rounded-md">Next
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+        <%- include('partials/footer') %>
+            <script>
+                // Include your JavaScript logic here to interact with the backend and update the UI
+                let clickCount = 0;
+                // Add this script block to set event listeners
+                document.addEventListener('DOMContentLoaded', function () {
+                    const buttons = document.querySelectorAll('[id^="cell_"]');
+                    const clickSound = new Audio('/sound_effects/clicking_sound.mp3'); // Change 'path_to_your_sound_file.mp3' to the actual path of your sound file
+
+                    function playClickSound() {
+                        clickSound.currentTime = 0; // Reset the sound to the beginning in case it's already playing
+                        clickSound.play(); // Play the sound
+                    }
+
+
+                    buttons.forEach(button => {
+                        button.addEventListener('click', function () {
+                            clickCount++;
+                            document.getElementById("user-moves").innerText = "Your Moves: " + clickCount;
+                            const row = this.dataset.row;
+                            const col = this.dataset.col;
+                            // console.log(row, col);
+                            toggleLights(row, col);
+                            playClickSound(); // Play the sound when the button is clicked
+                        });
+                    });
+                });
+                const winSound = new Audio('/sound_effects/winning_sound.mp3');
+                function playwinSound() {
+                    winSound.currentTime = 0; // Reset the sound to the beginning in case it's already playing
+                    winSound.play(); // Play the sound
+                }
+
+
+                async function toggleLights(row, col) {
+                    // console.log("ToggleLights");
+                    try {
+                        const response = await fetch("/api/toggleLights", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ row, col, clickCount }),
+                        });
+
+                        const data = await response.json();
+                        // console.log(data);
+                        await updateBoard(data.board, data.board.length);  // Update the board first
+// console.log("do game ended:",data.gameEnded);
+                        if (data.gameEnded) {
+                            document.getElementById('game-board').classList.add('hidden'); //Hiding div of 'board of game'.
+                            document.getElementById('moves').classList.add('hidden'); //Hiding div of 'board of game'.
+                            document.getElementById('congratulations').classList.remove('hidden'); //Showing div of  'congratulations'.
+                            document.getElementById('total-moves').innerText = `You took ${clickCount} moves.`; //Showing div of  'congratulations'.
+
+                            document.getElementById('next-game').classList.add('bg-blue-500', 'hover:bg-blue-800')
+                            document.getElementById('next-game').classList.remove('bg-green-500', 'hover:bg-green-800')
+                            document.getElementById('previous-game').classList.add('bg-teal-300', 'hover:bg-teal-500')
+                            document.getElementById('next-game').classList.remove('bg-green-500', 'hover:bg-green-800')
+                            playwinSound();
+                        }
+                    } catch (error) {
+                        console.error("Error toggling lights:", error);
+                    }
+                }
+
+
+                function updateBoard(newBoard, matrixSize) {
+                    // console.log("UPdateBoard");
+                    // Implement logic to update the visual representation of the game board
+                    // For example, you can update the button classes based on the new board state
+                    for (let row = 0; row < matrixSize; row++) {
+                        console.log(matrixSize)
+                        for (let col = 0; col < matrixSize; col++) {
+                            const button = document.getElementById(`cell_${row}_${col}`);
+                            // console.log("button",button);
+                            if (matrixSize > 4) {
+
+                                button.className = `h-14 w-14 rounded-md ${newBoard[row][col] ? 'bg-purple-500' : 'bg-gray-300'}`;
+                            } else {
+
+                                button.className = `h-16 w-16 rounded-md ${newBoard[row][col] ? 'bg-purple-500' : 'bg-gray-300'}`;
+                            }
+                        }
+                    }
+                }
+
+                // Add event listener for the hint button
+                document.getElementById("hint-button").addEventListener('click', async function () {
+                    document.body.style.backdropFilter = 'blur(15px)';
+                    try {
+                        const response = await fetch("/api/getHint", { method: "GET" });
+                        const hintMatrix = await response.json();
+                        // console.log("hint matrix: ", hintMatrix.hintGrid);
+                        updateHintBoard(hintMatrix.hintGrid); // Update the hint board with the received hint matrix
+                        document.getElementById('outer-hint-board').classList.remove('hidden'); // Show the hint board
+                        document.getElementById('complete-game').classList.add('hidden'); // hide the complete game board
+                    } catch (error) {
+                        console.error("Error getting hint:", error);
+                    }
+                });
+
+                function updateHintBoard(hintMatrix) {
+                    const hintMatrixDiv = document.getElementById('hint-matrix');
+
+                    // Clear previous content
+                    hintMatrixDiv.innerHTML = '';
+
+                    // Loop through each row of the hint matrix
+                    for (let i = 0; i < hintMatrix.length; i++) {
+                        // Loop through each column of the current row
+                        for (let j = 0; j < hintMatrix[i].length; j++) {
+                            // Create a div element for the cell
+                            const cellDiv = document.createElement('div');
+                            if (hintMatrix.length > 4) {
+
+                                cellDiv.classList.add('h-14', 'w-14', 'rounded-md', 'bg-gray-300', 'relative');
+                            }
+                            else {
+
+                                cellDiv.classList.add('h-16', 'w-16', 'rounded-md', 'bg-gray-300', 'relative');
+                            }
+
+
+                            // Create a div element for the number
+                            const numberDiv = document.createElement('div');
+                            numberDiv.classList.add('absolute', 'inset-0', 'flex', 'items-center', 'justify-center', 'text-white', 'text-lg', 'font-bold');
+                            numberDiv.textContent = hintMatrix[i][j]; // Set the content of the number div to the cell value
+                            // console.log(hintMatrix[i][j]);
+                            // Append the number div to the cell div
+                            cellDiv.appendChild(numberDiv);
+
+                            // Append the cell div to the hint matrix div
+                            hintMatrixDiv.appendChild(cellDiv);
+                        }
+                    }
+                }
+
+                document.getElementById("remove-hint-button").addEventListener('click', async function () {
+
+                    document.getElementById("complete-game").classList.remove("hidden");
+                    document.getElementById("outer-hint-board").classList.add("hidden");
+
+                    document.body.style.backdropFilter = '';
+
+                })
+                // Submiting the level & making the POST request to the backend side.
+                function submitLevelForm() {
+                    document.getElementById("levelForm").submit();
+                }
+                // Submiting the state & making the POST request to the backend side.
+                function submitStateForm() {
+                    document.getElementById("game-state").submit();
+                }
+            </script>
+            </div>
+</body>
+
+</html>

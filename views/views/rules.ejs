@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Learn the rules and guidelines for using our platform. Understand the terms of service and community guidelines to ensure a positive experience for all users.">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
+    <!-- Include Poppins font -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="/styles/style.css" />
+    <!-- Update the path to your CSS file -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <!-- Include Tailwind CSS -->
+    <link rel="icon" href="/photos/Icons_LO.png" type="image/png" />
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9151064528587732"
+        crossorigin="anonymous"></script>
+    <title>How to Play Lights Out | LightsOut</title>
+</head>
+
+<body>
+    <div class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 font-poppins">
+        <!-- Include Header -->
+        <%-include('partials/header') %>
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+
+                <div class="flex justify-center items-center mt-8 sm:mt-12 lg:mt-20">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-6xl">
+                        <!-- Instructions for 2-state game -->
+                        <div class="form-container bg-white shadow-lg rounded-lg p-6 sm:p-10">
+                            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 text-center text-gray-800">
+                                How to Play 2-State Lights Out
+                            </h2>
+
+                            <div class="text-base sm:text-lg lg:text-xl text-gray-700 mb-6">
+                                <p>
+                                    Lights Out is a puzzle game consisting of a grid of lights
+                                    that are either on or off. The goal of the game is to switch
+                                    off all the lights.
+                                </p>
+                                <p>
+                                    Each press of a light toggles it as well as the adjacent
+                                    lights (up, down, left, right). The puzzle is solved when all
+                                    the lights are turned off.
+                                </p>
+                            </div>
+
+                            <h3 class="text-lg sm:text-xl lg:text-2xl font-semibold mb-4 text-center text-gray-700">
+                                Instructions:
+                            </h3>
+                            <ol class="text-base sm:text-lg lg:text-xl text-gray-700">
+                                <li class="flex items-start mb-2 sm:mb-4">
+                                    <div class="mr-3 w-12 h-12 sm:w-16 h-16">
+                                        <img src="/gifs/click1.gif" alt="Step 1" class="w-full h-full" />
+                                    </div>
+                                    <div>
+                                        <p>Begin by selecting any light on the grid.</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start mb-2 sm:mb-4">
+                                    <div class="mr-3 w-12 h-12 sm:w-16 h-16">
+                                        <img src="/photos/rule2.png" alt="Step 2" class="w-full h-full" />
+                                    </div>
+                                    <div>
+                                        <p>
+                                            Every click switches the chosen and nearby <br />
+                                            lights (not diagonal).
+                                        </p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start mb-2 sm:mb-4">
+                                    <div class="mr-3 w-12 h-12 sm:w-16 h-16">
+                                        <img src="/gifs/click2.gif" alt="Step 3" class="w-full h-full" />
+                                    </div>
+                                    <div>
+                                        <p>Keep clicking lights until they are all off.</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start mb-2 sm:mb-4">
+                                    <div class="mr-3 w-12 h-12 sm:w-16 h-16">
+                                        <img src="/photos/rule3.png" alt="Step 4" class="w-full h-full" />
+                                    </div>
+                                    <div>
+                                        <p>
+                                            Plan your moves carefully to solve the puzzle<br />
+                                            efficiently.
+                                        </p>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <!-- Instructions for 3-state game -->
+                        <div class="form-container bg-white shadow-lg rounded-lg p-6 sm:p-10">
+                            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 text-center text-gray-800">
+                                How to Play 3-State Lights Out
+                            </h2>
+
+                            <div class="text-base sm:text-lg lg:text-xl text-gray-700 mb-6">
+                                <p>
+                                    Lights Out is a puzzle game consisting of a grid of lights
+                                    that can be in one of three states: on, off, or dim. The goal
+                                    of the game is to turn off all the lights.
+                                </p>
+                                <p>
+                                    Each press of a light toggles it as well as the adjacent
+                                    lights (up, down, left, right). The puzzle is solved when all
+                                    the lights are turned off.
+                                </p>
+                            </div>
+
+                            <h3 class="text-lg sm:text-xl lg:text-2xl font-semibold mb-4 text-center text-gray-700">
+                                Instructions:
+                            </h3>
+                            <ol class="text-base sm:text-lg lg:text-xl text-gray-700">
+                                <li class="flex items-start mb-2 sm:mb-4">
+                                    <div class="mr-3 w-12 h-12 sm:w-16 h-16">
+                                        <img src="/gifs/click31.gif" alt="Step 1" class="w-full h-full" />
+                                    </div>
+                                    <div>
+                                        <p>Start by clicking on any light on the grid.</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start mb-2 sm:mb-4">
+                                    <div class="mr-3 w-12 h-12 sm:w-16 h-16">
+                                        <img src="/photos/rule31.png" alt="Step 2" class="w-full h-full" />
+                                    </div>
+                                    <div>
+                                        <p>
+                                            Each click toggles the chosen light and <br />neighbors.
+                                            Click again to turn all lights off.
+                                        </p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start mb-2 sm:mb-4">
+                                    <div class="mr-3 w-12 h-12 sm:w-16 h-16">
+                                        <img src="/gifs/click31.gif" alt="Step 3" class="w-full h-full" />
+                                    </div>
+                                    <div>
+                                        <p>
+                                            After clicking, the selected light and <br />neighbors
+                                            change color. Click again to turn off all lights.
+                                        </p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start mb-2 sm:mb-4">
+                                    <div class="mr-3 w-12 h-12 sm:w-16 h-16">
+                                        <img src="/photos/rule3.png" alt="Step 4" class="w-full h-full" />
+                                    </div>
+                                    <div>
+                                        <p>
+                                            Plan your moves carefully to solve with the fewest clicks.
+                                        </p>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- Include Footer -->
+            <%-include('partials/footer') %>
+    </div>
+</body>
+
+</html>
