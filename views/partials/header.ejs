@@ -24,7 +24,7 @@
         <button id="loginButton" class="login-button flex items-center justify-center text-white text-sm mt-2 relative">
             <% if (locals.profileImage) { %>
                 <!-- Display profile image if available -->
-                <img src="data:image/jpeg;base64,<%= Buffer.from(locals.profileImage).toString('base64') %>" alt="Login" class="w-9 h-9 rounded-full mr-1" width="24" height="24">
+                <img src="data:image/jpeg;base64,<%= Buffer.from(locals.profileImage).toString('base64') %>" class="w-9 h-9 rounded-full mr-1" width="24" height="24">
             <% } else { %>
                 <!-- Display default profile image if no image available -->
                 <img src="https://static-assets-web.flixcart.com/batman-returns/batman-returns/p/images/profile-52e0dc.svg" alt="Login" class="w-9 h-9 rounded-full mr-1" width="24" height="24">
@@ -39,11 +39,11 @@
                 <% let display = (name === "Login") ? "Login" : "Profile"; %>
                 <%= display %>
             </a>
+            <!-- Add How to Play button -->
+            <a href="/rules" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Rules</a>
             <% if (name !== "Login") { %>
                 <a href="/logout" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Logout</a>
             <% } %>
-            <!-- Add How to Play button -->
-            <a href="/rules" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Rules</a>
         </div>
         
     </div>
