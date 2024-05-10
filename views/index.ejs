@@ -78,7 +78,7 @@
 
                     
                     
-                    <button id="remove-hint-button text"
+                    <button id="remove-hint-button"
                     class="relative top-0 right-0 text-white bg-red-500 px-2 py-1 rounded-md">Remove</button>
 
                     <% if(locals.name!="Login" ) { %>
@@ -109,12 +109,12 @@
                         <% for (let col=0; col < board[row].length; col++) { %>
                             <% if(board.length>4) {%>
 
-                                <button id="cell_<%= row %>_<%= col %> text"
+                                <button id="cell_<%= row %>_<%= col %>"
                                     class="h-14 w-14 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-purple-500<% } else { %>bg-gray-300<% } %>"
                                     data-row="<%= row %>" data-col="<%= col %>"></button>
                                 <% } else { %>
 
-                                    <button id="cell_<%= row %>_<%= col %> text"
+                                    <button id="cell_<%= row %>_<%= col %>"
                                         class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-purple-500<% } else { %>bg-gray-300<% } %>"
                                         data-row="<%= row %>" data-col="<%= col %>"></button>
                                     <% }%>
