@@ -72,41 +72,37 @@ db.connect();
 const matrixSizeOptions = [3, 3, 4, 4, 4, 5, 5, 6, 6, 6];
 
 app.set('view engine', 'ejs');
-const isValidPosition = (row, col, grid) => {
-    return row >= 0 && row < grid.length && col >= 0 && col < grid[0].length;
-};
-
 const createGrid = (req, n) => {
     const initialGrid = Array.from({ length: req.session.matrixSize }, () =>
-    Array(req.session.matrixSize).fill(0)
-);
+        Array(req.session.matrixSize).fill(0)
+    );
 
-req.session.hintGrid = Array.from({ length: req.session.matrixSize }, () =>
-Array(req.session.matrixSize).fill(0)
-);
-// console.log("hint board:",hintGrid);
+    req.session.hintGrid = Array.from({ length: req.session.matrixSize }, () =>
+        Array(req.session.matrixSize).fill(0)
+    );
 
-for (let i = 0; i < req.session.level; i++) {
-    let randomRow, randomCol;
-    
-    // Generate unique random values
-    do {
-        randomRow = Math.floor(Math.random() * req.session.matrixSize);
-        randomCol = Math.floor(Math.random() * req.session.matrixSize);
-    } while (initialGrid[randomRow][randomCol] !== 0); // Continue generating until an unoccupied cell is found
-    
-    toggleLights(req,initialGrid, randomRow, randomCol, n);
-}
+    const pressedCells = new Set(); // Set to keep track of pressed cells
 
-return initialGrid;
+    for (let i = 0; i < req.session.level; i++) {
+        let randomRow, randomCol;
+
+        // Generate unique random values for unpressed cells
+        do {
+            randomRow = Math.floor(Math.random() * req.session.matrixSize);
+            randomCol = Math.floor(Math.random() * req.session.matrixSize);
+        } while (pressedCells.has(`${randomRow},${randomCol}`)); // Check if cell is already pressed
+
+        toggleLights(req, initialGrid, randomRow, randomCol, n);
+        pressedCells.add(`${randomRow},${randomCol}`); // Mark cell as pressed
+    }
+
+    return initialGrid;
 };
 
-const toggleLights = (req,grid, row, col, n) => {
-    // console.log(hintGrid)
+const toggleLights = (req, grid, row, col, n) => {
     if (isValidPosition(row, col, grid)) {
         grid[row][col] = (grid[row][col] + 1) % n;
         req.session.hintGrid[row][col] = (req.session.hintGrid[row][col] + 1) % n;
-        // console.log("Hint board: ",hintGrid);
         toggleAdjacentLights(grid, row, col, n);
     }
 };
@@ -118,7 +114,7 @@ const toggleAdjacentLights = (grid, row, col, n) => {
         [1, 0],
         [-1, 0],
     ];
-    
+
     directions.forEach(([dx, dy]) => {
         const newRow = row + dx;
         const newCol = col + dy;
@@ -128,23 +124,37 @@ const toggleAdjacentLights = (grid, row, col, n) => {
     });
 };
 
-
 app.get("/", (req, res) => {
     req.session.hint = true;
     req.session.matrixSize = req.session.matrixSize || 3;
     req.session.level = req.session.level || 1;
     req.session.board = createGrid(req, 2);
     let board = req.session.board;
-    // console.log("Game board:", board);
-    // console.log("Hint board: ", hintGrid);
+
     if (req.isAuthenticated()) {
-        res.render("index.ejs", { board, level:req.session.level, matrixSize:req.session.matrixSize, name: req.user.name, profileImage: req.user.profile_image });
-        // res.render("submit.ejs");
+        res.render("index.ejs", {
+            board,
+            level: req.session.level,
+            matrixSize: req.session.matrixSize,
+            name: req.user.name,
+            profileImage: req.user.profile_image
+        });
     } else {
-        // res.redirect("/login");
-        res.render("index.ejs", { board, level:req.session.level, matrixSize:req.session.matrixSize, name: "Login" });
+        res.render("index.ejs", {
+            board,
+            level: req.session.level,
+            matrixSize: req.session.matrixSize,
+            name: "Login"
+        });
     }
 });
+
+// Helper function to check if position is valid within the grid
+const isValidPosition = (row, col, grid) => {
+    const size = grid.length;
+    return row >= 0 && row < size && col >= 0 && col < size;
+};
+
 
 app.get(
     "/auth/google",
@@ -203,7 +213,83 @@ app.get('/levels', (req, res) => {
     } else if (id === '1' && req.session.level < 10) {
         req.session.level = parseInt(CurrLevel) + 1;
     } else {
-        return res.send('<script>alert("Crossing the edge limit!");window.location.href = "/";</script>');
+        return res.send(`<script>
+        // Wait for DOM content to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to dynamically load SweetAlert script
+            function loadSweetAlert() {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                script.onload = () => {
+                    // SweetAlert script loaded, now display the alert
+                    showSweetAlert();
+                };
+                document.head.appendChild(script);
+            }
+        
+            // Function to display SweetAlert once script is loaded
+            function showSweetAlert() {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Crossing the Edge Limit!',
+                    text: 'You have exceeded the allowed limit. Please try again later.',
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false, // Prevent dismissing by clicking outside
+                    customClass: {
+                        popup: 'sweetalert-popup',
+                        header: 'sweetalert-header',
+                        title: 'sweetalert-title',
+                        content: 'sweetalert-content',
+                        confirmButton: 'sweetalert-confirm-button',
+                    },
+                    showClass: {
+                        popup: 'animate__animated animate__zoomIn', // Entrance animation
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__zoomOut', // Exit animation
+                    },
+                    backdrop: 'rgba(0,0,0,0.6) url("https://source.unsplash.com/1600x900/?nature") center center no-repeat',
+                }).then(() => {
+                    window.location.href = "/";
+                });
+            }
+        
+            // Check if Swal (SweetAlert) is already defined
+            if (typeof Swal === 'undefined') {
+                // Swal is not defined, dynamically load the SweetAlert script
+                loadSweetAlert();
+            } else {
+                // Swal is already defined, directly show the SweetAlert
+                showSweetAlert();
+            }
+        });
+        
+    </script>
+    
+    <style>
+        /* Custom styles for SweetAlert */
+        .sweetalert-popup {
+            border-radius: 12px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+        }
+        .sweetalert-title {
+            color: #ff6347; /* Red color for the title */
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .sweetalert-content {
+            font-size: 18px;
+        }
+        .sweetalert-confirm-button {
+            background-color: #ff6347; /* Red color for the confirm button */
+            color: #fff;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 10px 20px;
+        }
+    </style>`);
+    
+
     }
 
     req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
@@ -423,7 +509,82 @@ app.get('/levels3', (req, res) => {
 
         req.session.level3 = parseInt(CurrLevel) + 1;
     } else {
-        return res.send('<script>alert("Crossing the edge limit!");window.location.href = "/state3";</script>');
+        return res.send(`<script>
+        // Wait for DOM content to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to dynamically load SweetAlert script
+            function loadSweetAlert() {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                script.onload = () => {
+                    // SweetAlert script loaded, now display the alert
+                    showSweetAlert();
+                };
+                document.head.appendChild(script);
+            }
+        
+            // Function to display SweetAlert once script is loaded
+            function showSweetAlert() {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Crossing the Edge Limit!',
+                    text: 'You have exceeded the allowed limit. Please try again later.',
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false, // Prevent dismissing by clicking outside
+                    customClass: {
+                        popup: 'sweetalert-popup',
+                        header: 'sweetalert-header',
+                        title: 'sweetalert-title',
+                        content: 'sweetalert-content',
+                        confirmButton: 'sweetalert-confirm-button',
+                    },
+                    showClass: {
+                        popup: 'animate__animated animate__zoomIn', // Entrance animation
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__zoomOut', // Exit animation
+                    },
+                    backdrop: 'rgba(0,0,0,0.6) url("https://source.unsplash.com/1600x900/?nature") center center no-repeat',
+                }).then(() => {
+                    window.location.href = "/";
+                });
+            }
+        
+            // Check if Swal (SweetAlert) is already defined
+            if (typeof Swal === 'undefined') {
+                // Swal is not defined, dynamically load the SweetAlert script
+                loadSweetAlert();
+            } else {
+                // Swal is already defined, directly show the SweetAlert
+                showSweetAlert();
+            }
+        });
+        
+    </script>
+    
+    <style>
+        /* Custom styles for SweetAlert */
+        .sweetalert-popup {
+            border-radius: 12px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+        }
+        .sweetalert-title {
+            color: #ff6347; /* Red color for the title */
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .sweetalert-content {
+            font-size: 18px;
+        }
+        .sweetalert-confirm-button {
+            background-color: #ff6347; /* Red color for the confirm button */
+            color: #fff;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 10px 20px;
+        }
+    </style>`);
+    
     }
 
     req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
@@ -678,6 +839,7 @@ app.get('/forgot-password', (req, res) => {
 
 app.post('/forgot-password', (req, res) => {
     const { email } = req.body;
+    const partial = hideEmailPhone(email);
 
     // Check if the email already exists in the Users table
     db.query("SELECT * FROM Users WHERE email = $1", [email])
@@ -719,7 +881,7 @@ app.post('/forgot-password', (req, res) => {
                             } else {
                                 // console.log('Email sent:', info.response);
                                 // Render the forgetPassword page with the page set to "enterOTP"
-                                res.render("forgetPassword", { page: "enterOTP", email: email, name: "Login" });
+                                res.render("forgetPassword", { page: "enterOTP", email: email, name: "Login", partialEmail:partial });
                             }
                         });
                     })
@@ -740,6 +902,7 @@ app.post('/forgot-password', (req, res) => {
 app.post('/enter-otp', (req, res) => {
     const { email, enteredOTP } = req.body;
     console.log(email,enteredOTP);
+    const partial = hideEmailPhone(email);
     // console.log("EnteredOTp",req.body);
 
     // Fetch stored OTP and expiration time corresponding to the email
@@ -772,7 +935,7 @@ if (enteredOTP === storedOTP) {
                 db.query("DELETE FROM otp WHERE email = $1", [email]); 
             } else {
                 // Invalid OTP, render enterOTP page with error message
-                res.render("forgetPassword", { page: "enterOTP", message: "Invalid OTP", email: email, name: "Login" });
+                res.render("forgetPassword", { page: "enterOTP", message: "Invalid OTP", email: email, name: "Login", partialEmail:partial });
             }
         })
         .catch(error => {
@@ -784,6 +947,7 @@ if (enteredOTP === storedOTP) {
 
 app.post("/resend-otp", (req, res) => {
     const { email } = req.body;
+    const partial = hideEmailPhone(email);
 
     // Check if OTP already exists for the email
     db.query("SELECT * FROM OTP WHERE email = $1", [email])
@@ -827,7 +991,7 @@ app.post("/resend-otp", (req, res) => {
                                     } else {
                                         console.log('Email sent:', info.response);
                                         // res.send('OTP has been resent successfully');
-                                        res.render("forgetPassword", { page: "enterOTP", email: email, name: "Login" });
+                                        res.render("forgetPassword", { page: "enterOTP", email: email, name: "Login", partialEmail:partial });
                                     }
                                 });
                             })
@@ -954,18 +1118,6 @@ console.log(userProfile.profile_image);
     }
 });
 
-// app.get("/edit-profile", (req,res)=> {
-
-//     // console.log(req.user);
-//     if(req.isAuthenticated()) {
-
-//         res.render("edit-profile",{name: req.user.name, email: req.user.email, id:req.user.id, profileImage: req.user.profile_image});
-//     } else {
-
-//         res.render("login",{name:"Login",page:"login"});
-//     }
-// });
-
 // Assuming you have a route for updating the user's name
 app.post('/update-name', async (req, res) => {
     const { newName } = req.body;
@@ -1024,74 +1176,6 @@ app.post('/update-profile-picture/:id', upload.single('profileImage'), async (re
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
-
-
-
-// app.post('/update-profile/:id', upload.single('profileImage'), async (req, res) => {
-//     const userID = req.params.id;
-//     const { name, email, password } = req.body;
-//     console.log(password.length);
-
-//     try {
-//         // Construct the SQL query to update user's profile
-//         let query;
-//         let queryValues;
-
-//         if (password.length>0) {
-//             // Update profile including password
-//             query = `
-//                 UPDATE public.users
-//                 SET name = $1, email = $2, password = $3
-//                 WHERE id = $4
-//                 RETURNING *;
-//             `;
-//             queryValues = [name, email, password, userID];
-//         } else {
-//             // Update profile excluding password
-//             query = `
-//                 UPDATE public.users
-//                 SET name = $1, email = $2
-//                 WHERE id = $3
-//                 RETURNING *;
-//             `;
-//             queryValues = [name, email, userID];
-//         }
-        
-//         // Execute the SQL query with parameters
-//         const result = await db.query(query, queryValues);
-
-//         // Send back the updated user data
-//         res.json({ message: 'Profile updated successfully', user: result.rows[0] });
-//     } catch (error) {
-//         console.error('Error updating profile:', error);
-//         res.status(500).json({ error: 'Internal Server Error' });
-//     }
-// });
-
-
-
-// Add route to handle profile updates
-// app.post('/edit-profile', (req, res) => {
-//     const { name } = req.body;
-//     const email = req.session.user.email; // Assuming you're using session for authentication
-
-//     // Update the name in the Users table
-//     const updateNameQuery = {
-//         text: 'UPDATE Users SET name = $1 WHERE email = $2',
-//         values: [name, email],
-//     };
-
-//     db.query(updateNameQuery)
-//         .then(() => {
-//             // Name updated successfully, render userProfile with updated name
-//             res.render("userProfile", { name: name, email: email });
-//         })
-//         .catch(error => {
-//             console.error('Error updating name:', error);
-//             res.status(500).send('Error updating name');
-//         });
-// });
-
 
 app.get("/leaderboard", async (req, res) => {
     if (req.isAuthenticated()) {
@@ -1512,8 +1596,3 @@ function performMatrixOperations4(matrix1) {
       return modifiedResult15;
     }
   }
-
-// 4*4 matrix minimal solution function ends here.
-
-// console.log("Matrix with the least number of '1's:");
-// console.log(resultMatrix);
