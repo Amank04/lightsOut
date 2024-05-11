@@ -4,10 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Experience the classic Lights Out puzzle game with a twist! This unique web version includes both 2-state and revolutionary 3-state gameplay, offering cutting-edge UI design. Challenge yourself to solve the grid by strategically toggling lights.">
+    <meta name="description"
+        content="Experience the classic Lights Out puzzle game with a twist! This unique web version includes both 2-state and revolutionary 3-state gameplay, offering cutting-edge UI design. Challenge yourself to solve the grid by strategically toggling lights.">
     <link rel="stylesheet" href="/styles/style.css"> <!-- Update the path to your CSS file -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9151064528587732"
         crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="icon" href="/photos/Icons_LO.png" type="image/png">
 
     <style>
@@ -76,10 +79,10 @@
 
                 <div id="hint-board" class="mb-6 w-full">
 
-                    
-                    
+
+
                     <button id="remove-hint-button"
-                    class="relative top-0 right-0 text-white bg-red-500 px-2 py-1 rounded-md">Remove</button>
+                        class="relative top-0 right-0 text-white bg-red-500 px-2 py-1 rounded-md">Remove</button>
 
                     <% if(locals.name!="Login" ) { %>
 
@@ -87,12 +90,12 @@
                             Progress will NOT be saved.
                         </p>
                         <% } %>
-                    <h3 class="text-lg font-bold mb-2">Hint:</h3>
-                    <div id="hint-matrix" class="grid grid-cols-<%=board.length %> gap-2">
+                            <h3 class="text-lg font-bold mb-2">Hint:</h3>
+                            <div id="hint-matrix" class="grid grid-cols-<%=board.length %> gap-2">
 
-                        <!-- This structure is dynamically created by the client side javascript -->
+                                <!-- This structure is dynamically created by the client side javascript -->
 
-                    </div>
+                            </div>
                 </div>
             </div>
             <div id="complete-game"
@@ -118,8 +121,8 @@
                                         class="h-16 w-16 rounded-md focus:outline-none focus:ring focus:border-blue-300 transition-all duration-300 <% if (board[row][col]) { %>bg-purple-500<% } else { %>bg-gray-300<% } %>"
                                         data-row="<%= row %>" data-col="<%= col %>"></button>
                                     <% }%>
-                            <% } %>
-                                <% } %>
+                                        <% } %>
+                                            <% } %>
                 </div>
 
 
@@ -142,7 +145,7 @@
                         <p id="target-moves" class="text-xs">Target Moves: <%=level %>
                         </p>
                         <p id="user-moves" class="text-xs">Your Moves: 0 </p>
-                        <button id="hint-button text" class="text-blue-500">Hint</button>
+                        <button id="hint-button" class="text-blue-500">Hint</button>
                     </div>
 
                     <!-- State Selector -->
@@ -192,7 +195,7 @@
                     <div class="flex">
 
                         <a id="previous-game" href="/levels?CurrLevel=<%= level %>&id=0"
-                            class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white text-fit mr-1 px-4 py-2 rounded-md">Prev
+                            class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white text-fit mr-1 px-4 py-2 rounded-md ">Prev
                         </a>
                         <a id="next-game" href="/levels?CurrLevel=<%= level %>&id=1"
                             class="w-full justify-center flex bg-green-500 hover:bg-green-800 text-white text-fit ml-1 px-4 py-2 rounded-md">Next
@@ -276,7 +279,7 @@
                         console.log(matrixSize)
                         for (let col = 0; col < matrixSize; col++) {
                             const button = document.getElementById(`cell_${row}_${col}`);
-                            if(matrixSize>4) {
+                            if (matrixSize > 4) {
 
                                 button.className = `h-14 w-14 rounded-md ${newBoard[row][col] ? 'bg-purple-500' : 'bg-gray-300'}`;
                             } else {
