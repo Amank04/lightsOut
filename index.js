@@ -131,6 +131,7 @@ app.get("/", (req, res) => {
     req.session.board = createGrid(req, 2);
     let board = req.session.board;
 
+
     if (req.isAuthenticated()) {
         res.render("index.ejs", {
             board,
@@ -205,12 +206,115 @@ app.get("/team", (req, res) => {
     }
 })
 
-app.get('/levels', (req, res) => {
+app.get('/levels',async (req, res) => {
     const { id, CurrLevel } = req.query;
 
     if (id === '0' && req.session.level > 1) {
         req.session.level = parseInt(CurrLevel) - 1;
     } else if (id === '1' && req.session.level < 10) {
+        if (req.isAuthenticated()) {
+            try {
+                // Check if req.session.level3 exists in the database for the authenticated user
+                const result = await db.query('SELECT * FROM userprogress WHERE email = $1 AND level = $2', [req.user.email, parseInt(CurrLevel)]);
+                
+                if (result.rows.length > 0) {
+                    req.session.level = parseInt(CurrLevel) + 1;
+                    // Level progress found in database
+                    req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
+                    res.redirect('/');
+                } else {
+                    const result = await db.query('SELECT * FROM userprogress WHERE email = $1 AND level = (SELECT MAX(level) FROM userprogress WHERE email = $1)', [req.user.email]);
+    
+                    req.session.level = result.rows[0].level + 1;
+                    req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
+                    // Level progress not found in database
+                    // Send alert or handle appropriately (e.g., send a message back to the client)
+                    return res.send(`<script>
+            // Wait for DOM content to be fully loaded
+            document.addEventListener('DOMContentLoaded', function() {
+                // Function to dynamically load SweetAlert script
+                function loadSweetAlert() {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                    script.onload = () => {
+                        // SweetAlert script loaded, now display the alert
+                        showSweetAlert();
+                    };
+                    document.head.appendChild(script);
+                }
+            
+                // Function to display SweetAlert once script is loaded
+                function showSweetAlert() {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Access denied!',
+                        text: 'You have NOT completed the previous level,please first complete them.',
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false, // Prevent dismissing by clicking outside
+                        customClass: {
+                            popup: 'sweetalert-popup',
+                            header: 'sweetalert-header',
+                            title: 'sweetalert-title',
+                            content: 'sweetalert-content',
+                            confirmButton: 'sweetalert-confirm-button',
+                        },
+                        showClass: {
+                            popup: 'animate__animated animate__zoomIn', // Entrance animation
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__zoomOut', // Exit animation
+                        },
+                        backdrop: 'rgba(0,0,0,0.6) url("https://source.unsplash.com/1600x900/?nature") center center no-repeat',
+                    }).then(() => {
+                        window.location.href = "/";
+                    });
+                }
+            
+                // Check if Swal (SweetAlert) is already defined
+                if (typeof Swal === 'undefined') {
+                    // Swal is not defined, dynamically load the SweetAlert script
+                    loadSweetAlert();
+                } else {
+                    // Swal is already defined, directly show the SweetAlert
+                    showSweetAlert();
+                }
+            });
+            
+        </script>
+        
+        <style>
+            /* Custom styles for SweetAlert */
+            .sweetalert-popup {
+                border-radius: 12px;
+                box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+            }
+            .sweetalert-title {
+                color: #ff6347; /* Red color for the title */
+                font-size: 24px;
+                font-weight: bold;
+            }
+            .sweetalert-content {
+                font-size: 18px;
+            }
+            .sweetalert-confirm-button {
+                background-color: #ff6347; /* Red color for the confirm button */
+                color: #fff;
+                font-weight: bold;
+                border-radius: 8px;
+                padding: 10px 20px;
+            }
+        </style>`);
+        
+                }
+            } catch (error) {
+                console.error('Error querying database:', error);
+                res.status(500).send("Internal server error");
+            }
+        } else {
+            req.session.level = parseInt(CurrLevel) - 1;
+            req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
+    res.redirect("/");
+        }
         req.session.level = parseInt(CurrLevel) + 1;
     } else {
         return res.send(`<script>
@@ -231,8 +335,8 @@ app.get('/levels', (req, res) => {
             function showSweetAlert() {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Crossing the Edge Limit!',
-                    text: 'You have exceeded the allowed limit. Please try again later.',
+                    title: 'Crossing the Level Limit!',
+                    text: 'You have exceeded the allowed level limit. Please try correct level.',
                     confirmButtonText: 'OK',
                     allowOutsideClick: false, // Prevent dismissing by clicking outside
                     customClass: {
@@ -306,9 +410,9 @@ app.post("/api/toggleLights", (req, res) => {
     toggleLights(req,req.session.board, parseInt(row), parseInt(col), 2);
     console.log(req.session.board);
 
-    const gameEnded = req.session.board.every(row => row.every(cell => !cell));
+     req.session.gameEnded = req.session.board.every(row => row.every(cell => !cell));
 
-    if (req.isAuthenticated() && gameEnded && req.session.hint) {
+    if (req.isAuthenticated() && req.session.gameEnded && req.session.hint) {
         const { email } = req.user;
         const {clickCount } = req.body; // Assuming level and clickCount are available from the request body
     
@@ -355,7 +459,7 @@ app.post("/api/toggleLights", (req, res) => {
             console.error("Error checking existing progress:", error);
         });
     }
-    
+    const gameEnded = req.session.gameEnded;
     res.json({ board, gameEnded });
 });
 
@@ -382,10 +486,116 @@ app.get("/api/getHint3", (req, res) => {
     res.json({ hintGrid3:req.session.hintGrid3 });
 })
 
-app.post("/levels", (req, res) => {
-    req.session.level = parseInt(req.body.level);
-    req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
-    res.redirect('/');
+app.post("/levels",async (req, res) => {
+    const {level} = req.body;
+    if (req.isAuthenticated()) {
+        try {
+            // Check if req.session.level3 exists in the database for the authenticated user
+            const result = await db.query('SELECT * FROM userprogress WHERE email = $1 AND level = $2', [req.user.email, level-1]);
+            
+            if (result.rows.length > 0) {
+                req.session.level = level;
+                // Level progress found in database
+                req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
+                res.redirect('/');
+            } else {
+                const result = await db.query('SELECT * FROM userprogress WHERE email = $1 AND level = (SELECT MAX(level) FROM userprogress WHERE email = $1)', [req.user.email]);
+
+                req.session.level = result.rows[0].level + 1;
+                req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
+                // Level progress not found in database
+                // Send alert or handle appropriately (e.g., send a message back to the client)
+                return res.send(`<script>
+        // Wait for DOM content to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to dynamically load SweetAlert script
+            function loadSweetAlert() {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                script.onload = () => {
+                    // SweetAlert script loaded, now display the alert
+                    showSweetAlert();
+                };
+                document.head.appendChild(script);
+            }
+        
+            // Function to display SweetAlert once script is loaded
+            function showSweetAlert() {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Access denied!',
+                    text: 'You have NOT completed the previous level, please complete them first.',
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false, // Prevent dismissing by clicking outside
+                    customClass: {
+                        popup: 'sweetalert-popup',
+                        header: 'sweetalert-header',
+                        title: 'sweetalert-title',
+                        content: 'sweetalert-content',
+                        confirmButton: 'sweetalert-confirm-button',
+                    },
+                    showClass: {
+                        popup: 'animate__animated animate__zoomIn', // Entrance animation
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__zoomOut', // Exit animation
+                    },
+                    backdrop: 'rgba(0,0,0,0.6) url("https://source.unsplash.com/1600x900/?nature") center center no-repeat',
+                }).then(() => {
+                    window.location.href = "/";
+                });
+            }
+        
+            // Check if Swal (SweetAlert) is already defined
+            if (typeof Swal === 'undefined') {
+                // Swal is not defined, dynamically load the SweetAlert script
+                loadSweetAlert();
+            } else {
+                // Swal is already defined, directly show the SweetAlert
+                showSweetAlert();
+            }
+        });
+        
+    </script>
+    
+    <style>
+        /* Custom styles for SweetAlert */
+        .sweetalert-popup {
+            border-radius: 12px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+        }
+        .sweetalert-title {
+            color: #ff6347; /* Red color for the title */
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .sweetalert-content {
+            font-size: 18px;
+        }
+        .sweetalert-confirm-button {
+            background-color: #ff6347; /* Red color for the confirm button */
+            color: #fff;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 10px 20px;
+        }
+    </style>`);
+
+            }
+        } catch (error) {
+            console.error('Error querying database:', error);
+            res.status(500).send("Internal server error");
+        }
+    } else {
+        // User is not authenticated
+        if (req.session.level) {
+            req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
+            res.redirect('/');
+        } else {
+            // Handle the case where req.session.level3 is not set (should not happen based on your existing logic)
+            res.status(400).send("Level not specified");
+        }
+    }
 });
 
 // 3-state lights out Start here.
@@ -499,14 +709,116 @@ app.get("/state3", (req, res) => {
 });
 
 
-app.get('/levels3', (req, res) => {
+app.get('/levels3',async (req, res) => {
     const { id, CurrLevel } = req.query;
     // console.log("Current level was: ", level3, id, CurrLevel);
-    if (id === '0' && req.session.level3 > 1) {
+    if (id === '0' && req.session.level3 > 1) { //previous level
         req.session.level3 = parseInt(CurrLevel) - 1;
 
-    } else if (id === '1' && req.session.level3 < 10) {
-
+    } else if (id === '1' && req.session.level3 < 10) { //next level
+        if (req.isAuthenticated()) {
+            try {
+                // Check if req.session.level3 exists in the database for the authenticated user
+                const result = await db.query('SELECT * FROM userprogress3 WHERE email = $1 AND level = $2', [req.user.email, parseInt(CurrLevel)]);
+                
+                if (result.rows.length > 0) {
+                    req.session.level3 = parseInt(CurrLevel) + 1;
+                    // Level progress found in database
+                    req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
+                    res.redirect('/state3');
+                } else {
+                    const result = await db.query('SELECT * FROM userprogress3 WHERE email = $1 AND level = (SELECT MAX(level) FROM userprogress3 WHERE email = $1)', [req.user.email]);
+    
+                    req.session.level3 = result.rows[0].level + 1;
+                    req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
+                    // Level progress not found in database
+                    // Send alert or handle appropriately (e.g., send a message back to the client)
+                    return res.send(`<script>
+            // Wait for DOM content to be fully loaded
+            document.addEventListener('DOMContentLoaded', function() {
+                // Function to dynamically load SweetAlert script
+                function loadSweetAlert() {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                    script.onload = () => {
+                        // SweetAlert script loaded, now display the alert
+                        showSweetAlert();
+                    };
+                    document.head.appendChild(script);
+                }
+            
+                // Function to display SweetAlert once script is loaded
+                function showSweetAlert() {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Access denied!',
+                        text: 'You have NOT completed the previous level,please first complete them.',
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false, // Prevent dismissing by clicking outside
+                        customClass: {
+                            popup: 'sweetalert-popup',
+                            header: 'sweetalert-header',
+                            title: 'sweetalert-title',
+                            content: 'sweetalert-content',
+                            confirmButton: 'sweetalert-confirm-button',
+                        },
+                        showClass: {
+                            popup: 'animate__animated animate__zoomIn', // Entrance animation
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__zoomOut', // Exit animation
+                        },
+                        backdrop: 'rgba(0,0,0,0.6) url("https://source.unsplash.com/1600x900/?nature") center center no-repeat',
+                    }).then(() => {
+                        window.location.href = "/state3";
+                    });
+                }
+            
+                // Check if Swal (SweetAlert) is already defined
+                if (typeof Swal === 'undefined') {
+                    // Swal is not defined, dynamically load the SweetAlert script
+                    loadSweetAlert();
+                } else {
+                    // Swal is already defined, directly show the SweetAlert
+                    showSweetAlert();
+                }
+            });
+            
+        </script>
+        
+        <style>
+            /* Custom styles for SweetAlert */
+            .sweetalert-popup {
+                border-radius: 12px;
+                box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+            }
+            .sweetalert-title {
+                color: #ff6347; /* Red color for the title */
+                font-size: 24px;
+                font-weight: bold;
+            }
+            .sweetalert-content {
+                font-size: 18px;
+            }
+            .sweetalert-confirm-button {
+                background-color: #ff6347; /* Red color for the confirm button */
+                color: #fff;
+                font-weight: bold;
+                border-radius: 8px;
+                padding: 10px 20px;
+            }
+        </style>`);
+        
+                }
+            } catch (error) {
+                console.error('Error querying database:', error);
+                res.status(500).send("Internal server error");
+            }
+        } else {
+            req.session.level3 = parseInt(CurrLevel) - 1;
+            req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
+    res.redirect("/state3");
+        }
         req.session.level3 = parseInt(CurrLevel) + 1;
     } else {
         return res.send(`<script>
@@ -527,8 +839,8 @@ app.get('/levels3', (req, res) => {
             function showSweetAlert() {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Crossing the Edge Limit!',
-                    text: 'You have exceeded the allowed limit. Please try again later.',
+                    title: 'Crossing the Level Limit!',
+                    text: 'You have exceeded the allowed level limit. Please try correct level.',
                     confirmButtonText: 'OK',
                     allowOutsideClick: false, // Prevent dismissing by clicking outside
                     customClass: {
@@ -586,9 +898,6 @@ app.get('/levels3', (req, res) => {
     </style>`);
     
     }
-
-    req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
-    res.redirect("/state3");
 });
 
 // API endpoint to toggle lights based on user input
@@ -601,10 +910,10 @@ app.post("/api/toggle3Lights", (req, res) => {
     // console.log(board3);
     console.log(req.session.board3);
     // Check if the game has ended
-    const gameEnded = req.session.board3.every(row => row.every(c => !c));
+    req.session.gameEnded = req.session.board3.every(row => row.every(c => !c));
     // console.log(gameEnded);
 
-    if (req.isAuthenticated() && gameEnded && req.session.hint) {
+    if (req.isAuthenticated() && req.session.gameEnded && req.session.hint) {
         const { email } = req.user;
         const {clickCount } = req.body; // Assuming level and clickCount are available from the request body
     
@@ -651,18 +960,125 @@ app.post("/api/toggle3Lights", (req, res) => {
             console.error("Error checking existing progress:", error);
         });
     }
-
+const gameEnded = req.session.gameEnded;
     res.json({ board3:req.session.board3, gameEnded });
 });
 
 // var level3 = 1;
-app.post("/levels3", (req, res) => {
-    // console.log(req.body);
-    req.session.level3 = parseInt(req.body.level);
+app.post("/levels3", async (req, res) => {
+    console.log(req.body);
+    const {level} = req.body;
 
-    req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
-    res.redirect('/state3');
-})
+    console.log(level,req.session.level3)
+    if (req.isAuthenticated()) {
+        try {
+            // Check if req.session.level3 exists in the database for the authenticated user
+            const result = await db.query('SELECT * FROM userprogress3 WHERE email = $1 AND level = $2', [req.user.email, level-1]);
+            
+            if (result.rows.length > 0) {
+                req.session.level3 = level;
+                // Level progress found in database
+                req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
+                res.redirect('/state3');
+            } else {
+                const result = await db.query('SELECT * FROM userprogress3 WHERE email = $1 AND level = (SELECT MAX(level) FROM userprogress3 WHERE email = $1)', [req.user.email]);
+
+                req.session.level3 = result.rows[0].level + 1;
+                req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
+                // Level progress not found in database
+                // Send alert or handle appropriately (e.g., send a message back to the client)
+                return res.send(`<script>
+        // Wait for DOM content to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to dynamically load SweetAlert script
+            function loadSweetAlert() {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                script.onload = () => {
+                    // SweetAlert script loaded, now display the alert
+                    showSweetAlert();
+                };
+                document.head.appendChild(script);
+            }
+        
+            // Function to display SweetAlert once script is loaded
+            function showSweetAlert() {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Access denied!',
+                    text: 'You have NOT completed the previous level,please first complete them.',
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false, // Prevent dismissing by clicking outside
+                    customClass: {
+                        popup: 'sweetalert-popup',
+                        header: 'sweetalert-header',
+                        title: 'sweetalert-title',
+                        content: 'sweetalert-content',
+                        confirmButton: 'sweetalert-confirm-button',
+                    },
+                    showClass: {
+                        popup: 'animate__animated animate__zoomIn', // Entrance animation
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__zoomOut', // Exit animation
+                    },
+                    backdrop: 'rgba(0,0,0,0.6) url("https://source.unsplash.com/1600x900/?nature") center center no-repeat',
+                }).then(() => {
+                    window.location.href = "/state3";
+                });
+            }
+        
+            // Check if Swal (SweetAlert) is already defined
+            if (typeof Swal === 'undefined') {
+                // Swal is not defined, dynamically load the SweetAlert script
+                loadSweetAlert();
+            } else {
+                // Swal is already defined, directly show the SweetAlert
+                showSweetAlert();
+            }
+        });
+        
+    </script>
+    
+    <style>
+        /* Custom styles for SweetAlert */
+        .sweetalert-popup {
+            border-radius: 12px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+        }
+        .sweetalert-title {
+            color: #ff6347; /* Red color for the title */
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .sweetalert-content {
+            font-size: 18px;
+        }
+        .sweetalert-confirm-button {
+            background-color: #ff6347; /* Red color for the confirm button */
+            color: #fff;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 10px 20px;
+        }
+    </style>`);
+
+            }
+        } catch (error) {
+            console.error('Error querying database:', error);
+            res.status(500).send("Internal server error");
+        }
+    } else {
+        // User is not authenticated
+        if (req.session.level3) {
+            req.session.matrixSize3 = matrixSizeOptions[req.session.level3 - 1];
+            res.redirect('/state3');
+        } else {
+            // Handle the case where req.session.level3 is not set (should not happen based on your existing logic)
+            res.status(400).send("Level not specified");
+        }
+    }
+});
 
 // 3-state lights out game ends here.
 
