@@ -501,7 +501,7 @@ app.post("/levels", async (req, res) => {
                 req.session.level = level;
                 // Level progress found in database
                 req.session.matrixSize = matrixSizeOptions[req.session.level - 1];
-                res.redirect("/");
+                return res.redirect("/");
             } else {
                 const result = await db.query(
                     "SELECT * FROM userprogress WHERE email = $1 AND level = (SELECT MAX(level) FROM userprogress WHERE email = $1)",
